@@ -3,7 +3,7 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |gem|
-  gem.name          = "fluent-plugin-sumologic_out"
+  gem.name          = "fluent-plugin-sumologic_output"
   gem.version       = "0.0.3"
   gem.authors       = ["Steven Adams"]
   gem.email         = ["stevezau@gmail.com"]
