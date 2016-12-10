@@ -116,6 +116,9 @@ class Sumologic < Fluent::BufferedOutput
       key = sumo_key(sumo_metadata)
       log_format = sumo_metadata['log_format'] || @log_format
 
+      # Strip any unwanted newlines
+      record[@log_key].chomp! if record[@log_key]
+
       case log_format
         when 'text'
           log = record[@log_key]
