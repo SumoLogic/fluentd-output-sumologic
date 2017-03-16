@@ -1,4 +1,4 @@
-# fluent-plugin-sumologic_out, a plugin for [Fluentd](http://fluentd.org)
+# fluent-plugin-sumologic_output, a plugin for [Fluentd](http://fluentd.org)
 
 This plugin has been designed to output logs to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
 
