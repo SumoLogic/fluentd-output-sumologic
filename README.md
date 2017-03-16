@@ -4,7 +4,7 @@ This plugin has been designed to output logs to [SumoLogic](http://www.sumologic
 
 ## Installation
 
-    gem install fluent-plugin-sumologic_out
+    gem install fluent-plugin-sumologic_output
 
 ## Configuration
 
