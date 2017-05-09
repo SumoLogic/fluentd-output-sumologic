@@ -9,7 +9,10 @@ class SumologicConnection
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
-    http.request(request_for(raw_data, source_host, source_category, source_name))
+    response = http.request(request_for(raw_data, source_host, source_category, source_name))
+    unless response.is_a?(Net::HTTPSuccess)
+      raise "Failed to send data to HTTP Source. #{response.code} - #{response.message}"
+    end
   end
 
   private
