@@ -44,6 +44,7 @@ class Sumologic < Fluent::BufferedOutput
   config_param :log_key, :string, :default => 'message'
   config_param :source_category, :string, :default => nil
   config_param :source_name, :string, :default => nil
+  config_param :source_name_key, :string, :default => 'source_name'
   config_param :source_host, :string, :default => nil
   config_param :verify_ssl, :bool, :default => true
 
@@ -118,7 +119,7 @@ class Sumologic < Fluent::BufferedOutput
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      sumo_metadata = record.fetch('_sumo_metadata', {})
+      sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
       key = sumo_key(sumo_metadata)
       log_format = sumo_metadata['log_format'] || @log_format
 
