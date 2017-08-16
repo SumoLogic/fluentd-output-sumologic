@@ -13,7 +13,8 @@ Configuration options for fluent.conf are:
 * `endpoint` - SumoLogic HTTP Collector URL
 * `verify_ssl` - Verify ssl certificate. (default is `true`)
 * `source_category` - Set _sourceCategory metadata field within SumoLogic (default is `nil`)
-* `source_name` - Set _sourceName metadata field within SumoLogic (default is `nil`)
+* `source_name` - Set _sourceName metadata field within SumoLogic - overrides source_name_key (default is `nil`)
+* `source_name_key` - Set as source::path_key's value so that the source_name can be extracted from Fluentd's buffer (default `source_name`)
 * `source_host` - Set _sourceHost metadata field within SumoLogic (default is `nil`)
 * `log_format` - Format to post logs into Sumo. (default `json`)
   * text - Logs will appear in SumoLogic in text format (taken from the field specified in `log_key`)
