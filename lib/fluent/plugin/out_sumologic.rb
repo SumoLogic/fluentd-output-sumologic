@@ -115,6 +115,9 @@ class Sumologic < Fluent::BufferedOutput
 
     # Sort messages
     chunk.msgpack_each do |tag, time, record|
+      # plugin dies randomly
+      # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
+      next unless record.is_a? Hash
       sumo_metadata = record.fetch('_sumo_metadata', {})
       key = sumo_key(sumo_metadata)
       log_format = sumo_metadata['log_format'] || @log_format
