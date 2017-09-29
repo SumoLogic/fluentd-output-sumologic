@@ -1,4 +1,4 @@
-require 'fluent/output'
+require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
 
@@ -34,10 +34,13 @@ class SumologicConnection
   end
 end
 
-class Sumologic < Fluent::BufferedOutput
+class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   # First, register the plugin. NAME is the name of this plugin
   # and identifies the plugin in the configuration file.
   Fluent::Plugin.register_output('sumologic', self)
+
+  helpers :compat_parameters
+  DEFAULT_BUFFER_TYPE = "memory"
 
   config_param :endpoint, :string
   config_param :log_format, :string, :default => 'json'
@@ -48,8 +51,20 @@ class Sumologic < Fluent::BufferedOutput
   config_param :source_host, :string, :default => nil
   config_param :verify_ssl, :bool, :default => true
 
+  config_section :buffer do
+    config_set_default :@type, DEFAULT_BUFFER_TYPE
+    config_set_default :chunk_keys, ['tag']
+  end
+
+  def initialize
+    super
+  end
+
   # This method is called before starting.
   def configure(conf)
+
+    compat_parameters_convert(conf, :buffer)
+
     unless conf['endpoint'] =~ URI::regexp
       raise Fluent::ConfigError, "Invalid SumoLogic endpoint url: #{conf['endpoint']}"
     end
@@ -95,7 +110,16 @@ class Sumologic < Fluent::BufferedOutput
   end
 
   def format(tag, time, record)
-    [tag, time, record].to_msgpack
+    if defined? time.nsec
+      mstime = time * 1000 + (time.nsec / 1000000)
+      [mstime, record].to_msgpack
+    else
+      [time, record].to_msgpack
+    end
+  end
+
+  def formatted_to_msgpack_binary
+    true
   end
 
   def sumo_key(sumo)
@@ -115,7 +139,7 @@ class Sumologic < Fluent::BufferedOutput
     messages_list = {}
 
     # Sort messages
-    chunk.msgpack_each do |tag, time, record|
+    chunk.msgpack_each do |time, record|
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
