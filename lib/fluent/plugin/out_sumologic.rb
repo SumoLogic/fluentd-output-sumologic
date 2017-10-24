@@ -98,16 +98,47 @@ class Sumologic < Fluent::BufferedOutput
     [tag, time, record].to_msgpack
   end
 
-  def sumo_key(sumo)
-    source_name = sumo['source'] || @source_name
-    source_category = sumo['category'] || @source_category
-    source_host = sumo['host'] || @source_host
+  def sumo_key(record, tag)
+    sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
+
+    source_name = expand_param(sumo_metadata['source'], tag, nil, record) || @source_name
+    source_category = expand_param(sumo_metadata['category'], tag, nil, record) || @source_category
+    source_host = expand_param(sumo_metadata['host'], tag, nil, record) || @source_host
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
   # Convert timestamp to 13 digit epoch if necessary
   def sumo_timestamp(time)
     time.to_s.length == 13 ? time : time * 1000
+  end
+
+  # copy from https://github.com/uken/fluent-plugin-elasticsearch/commit/1722c58758b4da82f596ecb0a5075d3cb6c99b2e#diff-33bfa932bf1443760673c69df745272eR221
+  def expand_param(param, tag, time, record)
+    # check for '${ ... }'
+    #   yes => `eval`
+    #   no  => return param
+    return param if (param =~ /\${.+}/).nil?
+
+    # check for 'tag_parts[]'
+      # separated by a delimiter (default '.')
+    tag_parts = tag.split(@delimiter) unless (param =~ /tag_parts\[.+\]/).nil? || tag.nil?
+
+    # pull out section between ${} then eval
+    inner = param.clone
+    while inner.match(/\${.+}/)
+      to_eval = inner.match(/\${(.+?)}/){$1}
+
+      if !(to_eval =~ /record\[.+\]/).nil? && record.nil?
+        return to_eval
+      elsif !(to_eval =~/tag_parts\[.+\]/).nil? && tag_parts.nil?
+        return to_eval
+      elsif !(to_eval =~/time/).nil? && time.nil?
+        return to_eval
+      else
+        inner.sub!(/\${.+?}/, eval( to_eval ))
+      end
+    end
+    inner
   end
 
   # This method is called every flush interval. Write the buffer chunk
@@ -119,8 +150,7 @@ class Sumologic < Fluent::BufferedOutput
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
-      key = sumo_key(sumo_metadata)
+      key = sumo_key(record, tag)
       log_format = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
