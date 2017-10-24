@@ -47,6 +47,7 @@ class Sumologic < Fluent::BufferedOutput
   config_param :source_name_key, :string, :default => 'source_name'
   config_param :source_host, :string, :default => nil
   config_param :verify_ssl, :bool, :default => true
+  config_param :delimiter, :string, :default => "."
 
   # This method is called before starting.
   def configure(conf)
