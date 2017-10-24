@@ -100,9 +100,15 @@ class Sumologic < Fluent::BufferedOutput
   end
 
   def sumo_key(sumo_metadata, record, tag)
-    source_name = expand_param(sumo_metadata['source'], tag, nil, record) || @source_name
-    source_category = expand_param(sumo_metadata['category'], tag, nil, record) || @source_category
-    source_host = expand_param(sumo_metadata['host'], tag, nil, record) || @source_host
+    source_name = sumo_metadata['source'] || @source_name
+    source_name = expand_param(source_name, tag, nil, record)
+
+    source_category = sumo_metadata['category'] || @source_category
+    source_category = expand_param(source_category, tag, nil, record)
+
+    source_host = sumo_metadata['host'] || @source_host
+    source_host = expand_param(source_host, tag, nil, record)
+    
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
