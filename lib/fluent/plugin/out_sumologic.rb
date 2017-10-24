@@ -98,9 +98,7 @@ class Sumologic < Fluent::BufferedOutput
     [tag, time, record].to_msgpack
   end
 
-  def sumo_key(record, tag)
-    sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
-
+  def sumo_key(sumo_metadata, record, tag)
     source_name = expand_param(sumo_metadata['source'], tag, nil, record) || @source_name
     source_category = expand_param(sumo_metadata['category'], tag, nil, record) || @source_category
     source_host = expand_param(sumo_metadata['host'], tag, nil, record) || @source_host
@@ -150,7 +148,8 @@ class Sumologic < Fluent::BufferedOutput
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      key = sumo_key(record, tag)
+      sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
+      key = sumo_key(sumo_metadata, record, tag)
       log_format = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
