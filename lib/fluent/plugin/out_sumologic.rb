@@ -59,7 +59,7 @@ class Sumologic < Fluent::BufferedOutput
       raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
     end
 
-    @sumo_conn = SumologicConnection.new(conf['endpoint'], @verify_ssl)
+    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'])
     super
   end
 
