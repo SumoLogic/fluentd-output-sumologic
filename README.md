@@ -21,6 +21,7 @@ Configuration options for fluent.conf are:
   * json - Logs will appear in SumoLogic in json format.
   * json_merge - Same as json but merge content of `log_key` into the top level and strip `log_key`
 * `log_key` - Used to specify the key when merging json or sending logs in text format (default `message`)
+* `open_timeout` - Set timeout seconds to wait until connection is opened.
 
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 ```
