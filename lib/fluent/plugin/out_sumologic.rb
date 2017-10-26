@@ -3,9 +3,10 @@ require 'net/https'
 require 'yajl'
 
 class SumologicConnection
-  def initialize(endpoint, verify_ssl)
+  def initialize(endpoint, verify_ssl, open_timeout)
     @endpoint_uri = URI.parse(endpoint.strip)
     @verify_ssl = verify_ssl
+    @open_timeout = open_timeout
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
@@ -30,6 +31,7 @@ class SumologicConnection
     client = Net::HTTP.new(@endpoint_uri.host, @endpoint_uri.port)
     client.use_ssl = true
     client.verify_mode = @verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+    client.open_timeout = @open_timeout
     client
   end
 end
@@ -48,6 +50,7 @@ class Sumologic < Fluent::BufferedOutput
   config_param :source_host, :string, :default => nil
   config_param :verify_ssl, :bool, :default => true
   config_param :delimiter, :string, :default => "."
+  config_param :open_timeout, :integer, :default => 60
 
   # This method is called before starting.
   def configure(conf)
@@ -59,7 +62,7 @@ class Sumologic < Fluent::BufferedOutput
       raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
     end
 
-    @sumo_conn = SumologicConnection.new(conf['endpoint'], @verify_ssl)
+    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i)
     super
   end
 
@@ -108,7 +111,7 @@ class Sumologic < Fluent::BufferedOutput
 
     source_host = sumo_metadata['host'] || @source_host
     source_host = expand_param(source_host, tag, nil, record)
-    
+
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
