@@ -3,9 +3,10 @@ require 'net/https'
 require 'yajl'
 
 class SumologicConnection
-  def initialize(endpoint, verify_ssl)
+  def initialize(endpoint, verify_ssl, open_timeout)
     @endpoint_uri = URI.parse(endpoint.strip)
     @verify_ssl = verify_ssl
+    @open_timeout = open_timeout
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
@@ -30,6 +31,7 @@ class SumologicConnection
     client = Net::HTTP.new(@endpoint_uri.host, @endpoint_uri.port)
     client.use_ssl = true
     client.verify_mode = @verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+    client.open_timeout = @open_timeout
     client
   end
 end
@@ -47,6 +49,8 @@ class Sumologic < Fluent::BufferedOutput
   config_param :source_name_key, :string, :default => 'source_name'
   config_param :source_host, :string, :default => nil
   config_param :verify_ssl, :bool, :default => true
+  config_param :delimiter, :string, :default => "."
+  config_param :open_timeout, :integer, :default => 60
 
   # This method is called before starting.
   def configure(conf)
@@ -58,7 +62,7 @@ class Sumologic < Fluent::BufferedOutput
       raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
     end
 
-    @sumo_conn = SumologicConnection.new(conf['endpoint'], @verify_ssl)
+    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i)
     super
   end
 
@@ -98,16 +102,51 @@ class Sumologic < Fluent::BufferedOutput
     [tag, time, record].to_msgpack
   end
 
-  def sumo_key(sumo)
-    source_name = sumo['source'] || @source_name
-    source_category = sumo['category'] || @source_category
-    source_host = sumo['host'] || @source_host
+  def sumo_key(sumo_metadata, record, tag)
+    source_name = sumo_metadata['source'] || @source_name
+    source_name = expand_param(source_name, tag, nil, record)
+
+    source_category = sumo_metadata['category'] || @source_category
+    source_category = expand_param(source_category, tag, nil, record)
+
+    source_host = sumo_metadata['host'] || @source_host
+    source_host = expand_param(source_host, tag, nil, record)
+
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
   # Convert timestamp to 13 digit epoch if necessary
   def sumo_timestamp(time)
     time.to_s.length == 13 ? time : time * 1000
+  end
+
+  # copy from https://github.com/uken/fluent-plugin-elasticsearch/commit/1722c58758b4da82f596ecb0a5075d3cb6c99b2e#diff-33bfa932bf1443760673c69df745272eR221
+  def expand_param(param, tag, time, record)
+    # check for '${ ... }'
+    #   yes => `eval`
+    #   no  => return param
+    return param if (param =~ /\${.+}/).nil?
+
+    # check for 'tag_parts[]'
+      # separated by a delimiter (default '.')
+    tag_parts = tag.split(@delimiter) unless (param =~ /tag_parts\[.+\]/).nil? || tag.nil?
+
+    # pull out section between ${} then eval
+    inner = param.clone
+    while inner.match(/\${.+}/)
+      to_eval = inner.match(/\${(.+?)}/){$1}
+
+      if !(to_eval =~ /record\[.+\]/).nil? && record.nil?
+        return to_eval
+      elsif !(to_eval =~/tag_parts\[.+\]/).nil? && tag_parts.nil?
+        return to_eval
+      elsif !(to_eval =~/time/).nil? && time.nil?
+        return to_eval
+      else
+        inner.sub!(/\${.+?}/, eval( to_eval ))
+      end
+    end
+    inner
   end
 
   # This method is called every flush interval. Write the buffer chunk
@@ -120,7 +159,7 @@ class Sumologic < Fluent::BufferedOutput
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
       sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
-      key = sumo_key(sumo_metadata)
+      key = sumo_key(sumo_metadata, record, tag)
       log_format = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
