@@ -3,6 +3,9 @@ require 'net/https'
 require 'yajl'
 
 class SumologicConnection
+
+  attr_reader :http
+  
   def initialize(endpoint, verify_ssl, open_timeout)
     @endpoint_uri = URI.parse(endpoint.strip)
     @verify_ssl = verify_ssl
