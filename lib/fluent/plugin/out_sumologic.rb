@@ -1,41 +1,42 @@
 require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
+require 'httpclient'
 
 class SumologicConnection
 
   attr_reader :http
-  
-  def initialize(endpoint, verify_ssl, open_timeout)
-    @endpoint_uri = URI.parse(endpoint.strip)
-    @verify_ssl = verify_ssl
-    @open_timeout = open_timeout
+
+  def initialize(endpoint, verify_ssl, connect_timeout)
+    @endpoint = endpoint
+    create_http_client(verify_ssl, connect_timeout)
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
-    response = http.request(request_for(raw_data, source_host, source_category, source_name))
-    unless response.is_a?(Net::HTTPSuccess)
-      raise "Failed to send data to HTTP Source. #{response.code} - #{response.message}"
+    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name))
+    unless response.ok?
+      raise "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
   end
 
   private
-  def request_for(raw_data, source_host, source_category, source_name)
-    request = Net::HTTP::Post.new(@endpoint_uri.request_uri)
-    request.body = raw_data
-    request['X-Sumo-Name'] = source_name
-    request['X-Sumo-Category'] = source_category
-    request['X-Sumo-Host'] = source_host
-    request
+
+  def request_headers(source_host, source_category, source_name)
+    {
+        'X-Sumo-Name'     => source_name,
+        'X-Sumo-Category' => source_category,
+        'X-Sumo-Host'     => source_host
+    }
   end
 
-  def http
-    # Rubys HTTP is not thread safe, so we need a new instance for each request
-    client = Net::HTTP.new(@endpoint_uri.host, @endpoint_uri.port)
-    client.use_ssl = true
-    client.verify_mode = @verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
-    client.open_timeout = @open_timeout
-    client
+  def ssl_options(verify_ssl)
+    verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+  end
+
+  def create_http_client(verify_ssl, connect_timeout)
+    @http                        = HTTPClient.new
+    @http.ssl_config.verify_mode = ssl_options(verify_ssl)
+    @http.connect_timeout        = connect_timeout
   end
 end
 
