@@ -181,6 +181,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   def write(chunk)
     messages_list = {}
 
+    tag = chunk.metadata.tag
+
     # Sort messages
     chunk.msgpack_each do |time, record|
       # plugin dies randomly
