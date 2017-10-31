@@ -156,13 +156,13 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     return param if (param =~ /\${.+}/).nil?
 
     # check for 'tag_parts[]'
-      # separated by a delimiter (default '.')
+    # separated by a delimiter (default '.')
     tag_parts = tag.split(@delimiter) unless (param =~ /tag_parts\[.+\]/).nil? || tag.nil?
 
     # pull out section between ${} then eval
     inner = param.clone
     while inner.match(/\${.+}/)
-      to_eval = inner.match(/\${(.+?)}/){$1}
+      to_eval = inner.match(/\${(.+?)}/) { $1 }
 
       if !(to_eval =~ /record\[.+\]/).nil? && record.nil?
         return to_eval
@@ -171,7 +171,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       elsif !(to_eval =~/time/).nil? && time.nil?
         return to_eval
       else
-        inner.sub!(/\${.+?}/, eval( to_eval ))
+        inner.sub!(/\${.+?}/, eval(to_eval))
       end
     end
     inner
@@ -188,9 +188,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
-      key = sumo_key(sumo_metadata, record, tag)
-      log_format = sumo_metadata['log_format'] || @log_format
+      sumo_metadata = record.fetch('_sumo_metadata', { 'source' => record[@source_name_key] })
+      key           = sumo_key(sumo_metadata, record, tag)
+      log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key]
@@ -202,9 +202,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             log.strip!
           end
         when 'json_merge'
-          log = dump_log(merge_json({:timestamp => sumo_timestamp(time)}.merge(record)))
+          log = dump_log(merge_json({ :timestamp => sumo_timestamp(time) }.merge(record)))
         else
-          log = dump_log({:timestamp => sumo_timestamp(time)}.merge(record))
+          log = dump_log({ :timestamp => sumo_timestamp(time) }.merge(record))
       end
 
       unless log.nil?
@@ -222,9 +222,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       source_name, source_category, source_host = key.split(':')
       @sumo_conn.publish(
           messages.join("\n"),
-          source_host=source_host,
+          source_host    =source_host,
           source_category=source_category,
-          source_name=source_name
+          source_name    =source_name
       )
     end
 
