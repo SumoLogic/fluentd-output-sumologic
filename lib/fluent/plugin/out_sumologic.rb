@@ -175,6 +175,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   # This method is called every flush interval. Write the buffer chunk
   def write(chunk)
+    tag = chunk.metadata.tag
     messages_list = {}
 
     # Sort messages
