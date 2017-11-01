@@ -42,6 +42,7 @@ Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
  log_format json
  source_category prod/someapp/logs
  source_name AppA
+ open_timeout 10
 </match>
 ```
 
