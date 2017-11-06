@@ -1,38 +1,42 @@
 require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
+require 'httpclient'
 
 class SumologicConnection
-  def initialize(endpoint, verify_ssl, open_timeout)
-    @endpoint_uri = URI.parse(endpoint.strip)
-    @verify_ssl = verify_ssl
-    @open_timeout = open_timeout
+
+  attr_reader :http
+
+  def initialize(endpoint, verify_ssl, connect_timeout)
+    @endpoint = endpoint
+    create_http_client(verify_ssl, connect_timeout)
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
-    response = http.request(request_for(raw_data, source_host, source_category, source_name))
-    unless response.is_a?(Net::HTTPSuccess)
-      raise "Failed to send data to HTTP Source. #{response.code} - #{response.message}"
+    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name))
+    unless response.ok?
+      raise "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
   end
 
   private
-  def request_for(raw_data, source_host, source_category, source_name)
-    request = Net::HTTP::Post.new(@endpoint_uri.request_uri)
-    request.body = raw_data
-    request['X-Sumo-Name'] = source_name
-    request['X-Sumo-Category'] = source_category
-    request['X-Sumo-Host'] = source_host
-    request
+
+  def request_headers(source_host, source_category, source_name)
+    {
+        'X-Sumo-Name'     => source_name,
+        'X-Sumo-Category' => source_category,
+        'X-Sumo-Host'     => source_host
+    }
   end
 
-  def http
-    # Rubys HTTP is not thread safe, so we need a new instance for each request
-    client = Net::HTTP.new(@endpoint_uri.host, @endpoint_uri.port)
-    client.use_ssl = true
-    client.verify_mode = @verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
-    client.open_timeout = @open_timeout
-    client
+  def ssl_options(verify_ssl)
+    verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+  end
+
+  def create_http_client(verify_ssl, connect_timeout)
+    @http                        = HTTPClient.new
+    @http.ssl_config.verify_mode = ssl_options(verify_ssl)
+    @http.connect_timeout        = connect_timeout
   end
 end
 
@@ -152,13 +156,13 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     return param if (param =~ /\${.+}/).nil?
 
     # check for 'tag_parts[]'
-      # separated by a delimiter (default '.')
+    # separated by a delimiter (default '.')
     tag_parts = tag.split(@delimiter) unless (param =~ /tag_parts\[.+\]/).nil? || tag.nil?
 
     # pull out section between ${} then eval
     inner = param.clone
     while inner.match(/\${.+}/)
-      to_eval = inner.match(/\${(.+?)}/){$1}
+      to_eval = inner.match(/\${(.+?)}/) { $1 }
 
       if !(to_eval =~ /record\[.+\]/).nil? && record.nil?
         return to_eval
@@ -167,7 +171,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       elsif !(to_eval =~/time/).nil? && time.nil?
         return to_eval
       else
-        inner.sub!(/\${.+?}/, eval( to_eval ))
+        inner.sub!(/\${.+?}/, eval(to_eval))
       end
     end
     inner
@@ -177,14 +181,16 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   def write(chunk)
     messages_list = {}
 
+    tag = chunk.metadata.tag
+
     # Sort messages
     chunk.msgpack_each do |time, record|
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      sumo_metadata = record.fetch('_sumo_metadata', {'source' => record[@source_name_key]})
-      key = sumo_key(sumo_metadata, record, tag)
-      log_format = sumo_metadata['log_format'] || @log_format
+      sumo_metadata = record.fetch('_sumo_metadata', { 'source' => record[@source_name_key] })
+      key           = sumo_key(sumo_metadata, record, tag)
+      log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key]
@@ -196,9 +202,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             log.strip!
           end
         when 'json_merge'
-          log = dump_log(merge_json({:timestamp => sumo_timestamp(time)}.merge(record)))
+          log = dump_log(merge_json({ :timestamp => sumo_timestamp(time) }.merge(record)))
         else
-          log = dump_log({:timestamp => sumo_timestamp(time)}.merge(record))
+          log = dump_log({ :timestamp => sumo_timestamp(time) }.merge(record))
       end
 
       unless log.nil?
@@ -216,9 +222,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       source_name, source_category, source_host = key.split(':')
       @sumo_conn.publish(
           messages.join("\n"),
-          source_host=source_host,
+          source_host    =source_host,
           source_category=source_category,
-          source_name=source_name
+          source_name    =source_name
       )
     end
 
