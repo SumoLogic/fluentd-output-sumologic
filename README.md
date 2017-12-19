@@ -26,7 +26,7 @@ Configuration options for fluent.conf are:
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 ```
 <source>
-  type tail
+  @type tail
   format json
   time_key time
   path /path/to/*.log
@@ -37,7 +37,7 @@ Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 </source>
 
 <match appa.**>
- type sumologic
+ @type sumologic
  endpoint https://collectors.sumologic.com/receiver/v1/http/XXXXXXXXXX
  log_format json
  source_category prod/someapp/logs
