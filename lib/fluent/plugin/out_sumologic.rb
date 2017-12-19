@@ -25,7 +25,8 @@ class SumologicConnection
     {
         'X-Sumo-Name'     => source_name,
         'X-Sumo-Category' => source_category,
-        'X-Sumo-Host'     => source_host
+        'X-Sumo-Host'     => source_host,
+        'X-Sumo-Client'   => 'fluentd-output'
     }
   end
 
