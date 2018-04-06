@@ -1,3 +1,4 @@
+
 require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
@@ -59,6 +60,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :verify_ssl, :bool, :default => true
   config_param :delimiter, :string, :default => "."
   config_param :open_timeout, :integer, :default => 60
+  config_param :add_timestamp, :bool, :default => true
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -202,9 +204,15 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             log.strip!
           end
         when 'json_merge'
-          log = dump_log(merge_json({ :timestamp => sumo_timestamp(time) }.merge(record)))
+          if @add_timestamp
+            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+          end
+          log = dump_log(merge_json(record))
         else
-          log = dump_log({ :timestamp => sumo_timestamp(time) }.merge(record))
+          if @add_timestamp
+            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+          end
+          log = dump_log(record)
       end
 
       unless log.nil?
@@ -230,3 +238,4 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   end
 end
+

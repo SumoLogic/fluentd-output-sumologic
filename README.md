@@ -22,6 +22,7 @@ Configuration options for fluent.conf are:
   * json_merge - Same as json but merge content of `log_key` into the top level and strip `log_key`
 * `log_key` - Used to specify the key when merging json or sending logs in text format (default `message`)
 * `open_timeout` - Set timeout seconds to wait until connection is opened.
+* `add_timestamp` - Add `timestamp` field to logs before sending to sumologic (default `true`)
 
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 ```
