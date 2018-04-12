@@ -195,7 +195,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
-      record[@log_key].chomp! if record[@log_key]
+      record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
 
       case log_format
         when 'text'
