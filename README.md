@@ -2,6 +2,10 @@
 
 This plugin has been designed to output logs to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
 
+| TLS Deprecation Notice |
+| --- |
+| In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
+
 ## Installation
 
     gem install fluent-plugin-sumologic_output
