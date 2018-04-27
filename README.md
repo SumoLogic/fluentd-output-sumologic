@@ -6,6 +6,9 @@ This plugin has been designed to output logs to [SumoLogic](http://www.sumologic
 | --- |
 | In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
 
+## Support
+The code in this repository has been contributed by the Sumo Logic community and is not officially supported by Sumo Logic. For any issues or questions please submit an issue through GitHub or start a conversation within the [Sumo Logic Community](https://community.sumologic.com) forums.  The maintainers of this project will work directly with the community to answer any questions, address bugs, or review any requests for new features. 
+
 ## Installation
 
     gem install fluent-plugin-sumologic_output
