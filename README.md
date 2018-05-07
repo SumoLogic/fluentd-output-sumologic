@@ -30,6 +30,7 @@ Configuration options for fluent.conf are:
 * `log_key` - Used to specify the key when merging json or sending logs in text format (default `message`)
 * `open_timeout` - Set timeout seconds to wait until connection is opened.
 * `add_timestamp` - Add `timestamp` field to logs before sending to sumologic (default `true`)
+* `proxy_uri` - Add the `uri` of the `proxy` environment if present.
 
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 ```

@@ -8,9 +8,9 @@ class SumologicConnection
 
   attr_reader :http
 
-  def initialize(endpoint, verify_ssl, connect_timeout)
+  def initialize(endpoint, verify_ssl, connect_timeout, proxy_uri)
     @endpoint = endpoint
-    create_http_client(verify_ssl, connect_timeout)
+    create_http_client(verify_ssl, connect_timeout, proxy_uri)
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
@@ -35,8 +35,8 @@ class SumologicConnection
     verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
   end
 
-  def create_http_client(verify_ssl, connect_timeout)
-    @http                        = HTTPClient.new
+  def create_http_client(verify_ssl, connect_timeout, proxy_uri)
+    @http                        = HTTPClient.new(proxy_uri)
     @http.ssl_config.verify_mode = ssl_options(verify_ssl)
     @http.connect_timeout        = connect_timeout
   end
@@ -61,6 +61,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :delimiter, :string, :default => "."
   config_param :open_timeout, :integer, :default => 60
   config_param :add_timestamp, :bool, :default => true
+  config_param :proxy_uri, :string, :default => nil
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -84,7 +85,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
     end
 
-    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i)
+    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i, conf['proxy_uri'])
     super
   end
 
