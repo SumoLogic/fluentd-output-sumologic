@@ -1,6 +1,6 @@
 # fluent-plugin-sumologic_output, a plugin for [Fluentd](http://fluentd.org)
 
-This plugin has been designed to output logs to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
+This plugin has been designed to output logs or metrics to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
 
 | TLS Deprecation Notice |
 | --- |
@@ -17,6 +17,7 @@ The code in this repository has been contributed by the Sumo Logic community and
 
 Configuration options for fluent.conf are:
 
+* `data_type` - The type of data that will be sent to Sumo Logic, either `logs` or `metrics` (Default is `logs `)
 * `endpoint` - SumoLogic HTTP Collector URL
 * `verify_ssl` - Verify ssl certificate. (default is `true`)
 * `source_category` - Set _sourceCategory metadata field within SumoLogic (default is `nil`)
@@ -31,7 +32,9 @@ Configuration options for fluent.conf are:
 * `open_timeout` - Set timeout seconds to wait until connection is opened.
 * `add_timestamp` - Add `timestamp` field to logs before sending to sumologic (default `true`)
 * `proxy_uri` - Add the `uri` of the `proxy` environment if present.
+* `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` (Default is `graphite `)
 
+### Example Configuration
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
 ```
 <source>
@@ -52,6 +55,31 @@ Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
  source_category prod/someapp/logs
  source_name AppA
  open_timeout 10
+</match>
+```
+
+Sending metrics to Sumo Logic using `in_http`:
+```
+<source>
+  @type http
+  port 8888
+  bind 0.0.0.0
+</source>
+
+<match test.carbon2>
+	@type sumologic
+	endpoint https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/ZaVnC4dhaV1hYfCAiqSH-PDY6gUOIgZvO60U_-y8SPQfK0Ks-ht7owrbk1AkX_ACp0uUxuLZOCw5QjBg1ndVPZ5TOJCFgNGRtFDoTDuQ2hzs3sn6FlfBSw==
+	data_type metrics
+	metric_data_format carbon2
+	flush_interval 1s
+</match>
+
+<match test.graphite>
+	@type sumologic
+	endpoint https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/ZaVnC4dhaV1hYfCAiqSH-PDY6gUOIgZvO60U_-y8SPQfK0Ks-ht7owrbk1AkX_ACp0uUxuLZOCw5QjBg1ndVPZ5TOJCFgNGRtFDoTDuQ2hzs3sn6FlfBSw==
+	data_type metrics
+	metric_data_format graphite
+	flush_interval 1s
 </match>
 ```
 
