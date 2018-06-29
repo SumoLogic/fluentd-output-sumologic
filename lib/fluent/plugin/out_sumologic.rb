@@ -1,4 +1,3 @@
-
 require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
@@ -13,22 +12,31 @@ class SumologicConnection
     create_http_client(verify_ssl, connect_timeout, proxy_uri)
   end
 
-  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil)
-    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name))
+  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type)
+    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name, data_type, metric_data_type))
     unless response.ok?
-      raise "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
+      raise RuntimeError, "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
   end
 
-  private
-
-  def request_headers(source_host, source_category, source_name)
-    {
+  def request_headers(source_host, source_category, source_name, data_type, metric_data_format)
+    headers = {
         'X-Sumo-Name'     => source_name,
         'X-Sumo-Category' => source_category,
         'X-Sumo-Host'     => source_host,
         'X-Sumo-Client'   => 'fluentd-output'
     }
+    if data_type == 'metrics'
+      case metric_data_format
+      when 'graphite'
+        headers['Content-Type'] = 'application/vnd.sumologic.graphite'
+      when 'carbon2'
+        headers['Content-Type'] = 'application/vnd.sumologic.carbon2'
+      else
+        raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2"
+      end
+    end
+    return headers
   end
 
   def ssl_options(verify_ssl)
@@ -49,7 +57,15 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   helpers :compat_parameters
   DEFAULT_BUFFER_TYPE = "memory"
+  LOGS_DATA_TYPE = "logs"
+  METRICS_DATA_TYPE = "metrics"
+  DEFAULT_DATA_TYPE = LOGS_DATA_TYPE
+  GRAPHITE_METRIC_FORMAT_TYPE = "graphite"
+  CARBON2_METRIC_FORMAT_TYPE = "carbon2"
+  DEFAULT_METRIC_FORMAT_TYPE = CARBON2_METRIC_FORMAT_TYPE
 
+  config_param :data_type, :string, :default => DEFAULT_DATA_TYPE
+  config_param :metric_data_format, :default => DEFAULT_METRIC_FORMAT_TYPE
   config_param :endpoint, :string
   config_param :log_format, :string, :default => 'json'
   config_param :log_key, :string, :default => 'message'
@@ -81,8 +97,24 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       raise Fluent::ConfigError, "Invalid SumoLogic endpoint url: #{conf['endpoint']}"
     end
 
-    unless conf['log_format'] =~ /\A(?:json|text|json_merge)\z/
-      raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
+    unless conf['data_type'].nil?
+      unless conf['data_type'] =~ /\A(?:logs|metrics)\z/
+        raise Fluent::ConfigError, "Invalid data_type #{conf['data_type']} must be logs or metrics"
+      end
+    end
+
+    if conf['data_type'].nil? || conf['data_type'] == LOGS_DATA_TYPE
+      unless conf['log_format'].nil?
+        unless conf['log_format'] =~ /\A(?:json|text|json_merge)\z/
+          raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
+        end
+      end
+    end
+
+    if conf['data_type'] == METRICS_DATA_TYPE && ! conf['metrics_data_type'].nil?
+      unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2)\z/
+        raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2"
+      end
     end
 
     @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i, conf['proxy_uri'])
@@ -191,14 +223,16 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       # plugin dies randomly
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
-      sumo_metadata = record.fetch('_sumo_metadata', { 'source' => record[@source_name_key] })
+      sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
       key           = sumo_key(sumo_metadata, record, tag)
       log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
 
-      case log_format
+      case @data_type
+      when 'logs'
+        case log_format
         when 'text'
           log = record[@log_key]
           unless log.nil?
@@ -214,6 +248,12 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             record = { :timestamp => sumo_timestamp(time) }.merge(record)
           end
           log = dump_log(record)
+        end
+      when 'metrics'
+        log = record[@log_key]
+        unless log.nil?
+          log.strip!
+        end
       end
 
       unless log.nil?
@@ -231,9 +271,11 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       source_name, source_category, source_host = key.split(':')
       @sumo_conn.publish(
           messages.join("\n"),
-          source_host    =source_host,
-          source_category=source_category,
-          source_name    =source_name
+          source_host         =source_host,
+          source_category     =source_category,
+          source_name         =source_name,
+          data_type           =@data_type,
+          metric_data_format  =@metric_data_format
       )
     end
 
