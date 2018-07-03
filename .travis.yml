@@ -3,3 +3,6 @@ lang: ruby
 script: bundle exec rake
 
 rvm: 2.1
+
+env:
+  - HOST=""
