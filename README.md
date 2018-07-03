@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/SumoLogic/fluentd-output-sumologic.svg?branch=master)](https://travis-ci.org/SumoLogic/fluentd-output-sumologic)
+
 # fluent-plugin-sumologic_output, a plugin for [Fluentd](http://fluentd.org)
 
 This plugin has been designed to output logs or metrics to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
