@@ -1,3 +1,9 @@
+require 'simplecov'
+SimpleCov.start
+
+require 'codecov'
+SimpleCov.formatter = SimpleCov::Formatter::Codecov
+
 $LOAD_PATH.unshift(File.expand_path("../../", __FILE__))
 require "test-unit"
 require "fluent/test"
