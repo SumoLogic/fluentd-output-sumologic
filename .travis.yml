@@ -3,6 +3,3 @@ lang: ruby
 script: bundle exec rake
 
 rvm: 2.3
-
-after_success:
-- bash <(curl -s https://codecov.io/bash)
