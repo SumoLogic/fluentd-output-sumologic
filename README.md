@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SumoLogic/fluentd-output-sumologic.svg?branch=master)](https://travis-ci.org/SumoLogic/fluentd-output-sumologic) ![](https://ruby-gem-downloads-badge.herokuapp.com/fluent-plugin-sumologic_output?type=total) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
+[![Build Status](https://travis-ci.org/SumoLogic/fluentd-output-sumologic.svg?branch=master)](https://travis-ci.org/SumoLogic/fluentd-output-sumologic) ![](https://ruby-gem-downloads-badge.herokuapp.com/fluent-plugin-sumologic_output?type=total) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/SumoLogic/fluentd-output-sumologic/issues)
 
 # fluent-plugin-sumologic_output, a plugin for [Fluentd](http://fluentd.org)
 
