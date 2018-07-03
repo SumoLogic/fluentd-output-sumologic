@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SumoLogic/fluentd-output-sumologic.svg?branch=master)](https://travis-ci.org/SumoLogic/fluentd-output-sumologic)
+[![Build Status](https://travis-ci.org/SumoLogic/fluentd-output-sumologic.svg?branch=master)](https://travis-ci.org/SumoLogic/fluentd-output-sumologic) ![](https://ruby-gem-downloads-badge.herokuapp.com/fluent-plugin-sumologic_output?type=total) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 
 # fluent-plugin-sumologic_output, a plugin for [Fluentd](http://fluentd.org)
 
@@ -9,7 +9,10 @@ This plugin has been designed to output logs or metrics to [SumoLogic](http://ww
 | In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
 
 ## Support
-The code in this repository has been contributed by the Sumo Logic community and is not officially supported by Sumo Logic. For any issues or questions please submit an issue through GitHub or start a conversation within the [Sumo Logic Community](https://community.sumologic.com) forums.  The maintainers of this project will work directly with the community to answer any questions, address bugs, or review any requests for new features. 
+The code in this repository has been developed in collaboration with the Sumo Logic community and is not supported via standard Sumo Logic Support channels. For any issues or questions please submit an issue directly on GitHub. The maintainers of this project will work directly with the community to answer any questions, address bugs, or review any requests for new features.
+
+## License
+Released under Apache 2.0 License. 
 
 ## Installation
 
