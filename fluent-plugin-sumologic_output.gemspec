@@ -22,7 +22,8 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "bundler", "~> 1.3"
   gem.add_development_dependency "rake"
-  gem.add_runtime_dependency "fluentd", ">= 0.14.0"
   gem.add_development_dependency 'test-unit', '~> 3.1.0'
+  gem.add_development_dependency "codecov", ">= 0.1.10"
+  gem.add_runtime_dependency "fluentd", ">= 0.14.0"
   gem.add_runtime_dependency 'httpclient', '~> 2.8.0'
 end
