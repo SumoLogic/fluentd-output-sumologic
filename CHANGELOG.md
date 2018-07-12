@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.1.1"></a>
+# [1.1.1] (2018-07-12)
+
+  * if `record[@log_key]` is json, parse it as JSON and not as string.  
+
 <a name="1.1.0"></a>
 # [1.1.0] (2018-06-29)
 

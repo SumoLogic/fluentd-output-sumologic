@@ -161,6 +161,48 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_json_double_encoded
+    config = %{
+      endpoint        https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234
+      log_format      json
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => '{"bar":"foo"}'})
+    end
+    assert_requested :post, "https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"timestamp":\d+.,"message":{"bar":"foo"}}\z/,
+                     times:1
+  end
+
+  def test_emit_text_format_as_json
+    config = %{
+      endpoint        https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234
+      log_format      json
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => 'some message'})
+    end
+    assert_requested :post, "https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"timestamp":\d+.,"message":"some message"}\z/,
+                     times:1
+  end
+
   def test_emit_json_merge
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234

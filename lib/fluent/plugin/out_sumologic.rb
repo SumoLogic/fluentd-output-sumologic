@@ -150,7 +150,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   # Strip sumo_metadata and dump to json
   def dump_log(log)
     log.delete('_sumo_metadata')
-    Yajl.dump(log)
+    begin
+      parser = Yajl::Parser.new
+      hash = parser.parse(log[@log_key])
+      log[@log_key] = hash
+      Yajl.dump(log)
+    rescue
+      Yajl.dump(log)
+    end
   end
 
   def format(tag, time, record)
