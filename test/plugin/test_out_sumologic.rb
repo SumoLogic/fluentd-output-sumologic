@@ -72,53 +72,6 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.proxy_uri, nil
   end
 
-  def test_emit_invalid_url_json
-    config = %{
-      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
-    }
-    driver = create_driver(config)
-    time = event_time
-    WebMock.allow_net_connect!
-    assert_raise RuntimeError do
-      driver.run do
-        driver.feed("output.test", time, {'foo' => 'bar', 'message' => "test"})
-      end
-    end
-    WebMock.disable_net_connect!
-  end
-
-  def test_emit_invalid_url_json_merge
-    config = %{
-      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
-      log_format      json_merge
-    }
-    driver = create_driver(config)
-    time = event_time
-    WebMock.allow_net_connect!
-    assert_raise RuntimeError do
-      driver.run do
-        driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test'})
-      end
-    end
-    WebMock.disable_net_connect!
-  end
-
-  def test_emit_invalid_url_text
-    config = %{
-      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
-      log_format      text
-    }
-    driver = create_driver(config)
-    time = event_time
-    WebMock.allow_net_connect!
-    assert_raise RuntimeError do
-      driver.run do
-        driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test'})
-      end
-    end
-    WebMock.disable_net_connect!
-  end
-
   def test_emit_text
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
