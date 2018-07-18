@@ -185,6 +185,7 @@ class SumologicOutput < Test::Unit::TestCase
     driver = create_driver(config)
     time = event_time
     stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
     driver.run do
       driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
           "host": "#{ENV['HOST']}",
@@ -193,7 +194,7 @@ class SumologicOutput < Test::Unit::TestCase
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
-                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'', 'X-Sumo-Name'=>'output.test'},
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test'},
                      body: /\A{"timestamp":\d+.,"foo":"bar","message":"test"}\z/,
                      times:1
   end
