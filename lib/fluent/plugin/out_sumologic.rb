@@ -88,6 +88,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     super
   end
 
+  def multi_workers_ready?
+    true
+  end
+
   # This method is called before starting.
   def configure(conf)
 

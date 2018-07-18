@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.2.0"></a>
+# [1.2.0] (2018-07-18)
+
+  * add support for multi worker
+
 <a name="1.1.1"></a>
 # [1.1.1] (2018-07-12)
 

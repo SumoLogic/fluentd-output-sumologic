@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |gem|
   gem.name          = "fluent-plugin-sumologic_output"
-  gem.version       = "1.1.1"
+  gem.version       = "1.2.0"
   gem.authors       = ["Steven Adams", "Frank Reno"]
   gem.email         = ["stevezau@gmail.com", "frank.reno@me.com"]
   gem.description   = %q{Output plugin to SumoLogic HTTP Endpoint}
@@ -24,6 +24,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "rake"
   gem.add_development_dependency 'test-unit', '~> 3.1.0'
   gem.add_development_dependency "codecov", ">= 0.1.10"
-  gem.add_runtime_dependency "fluentd", ">= 0.14.0"
+  gem.add_runtime_dependency "fluentd", ">= 0.14.12"
   gem.add_runtime_dependency 'httpclient', '~> 2.8.0'
 end
