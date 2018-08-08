@@ -70,6 +70,7 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.open_timeout, 60
     assert_equal instance.add_timestamp, true
     assert_equal instance.proxy_uri, nil
+    assert_equal instance.disable_cookies, false
   end
 
   def test_emit_text
