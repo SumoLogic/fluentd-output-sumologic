@@ -9,7 +9,7 @@ This plugin has been designed to output logs or metrics to [SumoLogic](http://ww
 | In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
 
 ## Support
-The code in this repository has been developed in collaboration with the Sumo Logic community and is not supported via standard Sumo Logic Support channels. For any issues or questions please submit an issue directly on GitHub. The maintainers of this project will work directly with the community to answer any questions, address bugs, or review any requests for new features.
+The code in this repository has been developed in collaboration with the Sumo Logic community and is not supported via standard Sumo Logic Support channels. For any issues or questions please submit an issue within the GitHub repository. The maintainers of this project will work directly with the community to answer any questions, address bugs, or review any requests for new features. 
 
 ## License
 Released under Apache 2.0 License. 
