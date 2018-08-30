@@ -69,7 +69,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   config_param :data_type, :string, :default => DEFAULT_DATA_TYPE
   config_param :metric_data_format, :default => DEFAULT_METRIC_FORMAT_TYPE
-  config_param :endpoint, :string
+  config_param :endpoint, :string, secret: true
   config_param :log_format, :string, :default => 'json'
   config_param :log_key, :string, :default => 'message'
   config_param :source_category, :string, :default => nil
@@ -296,4 +296,3 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   end
 end
-
