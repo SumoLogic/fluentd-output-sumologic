@@ -264,6 +264,52 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_with_sumo_metadata_with_fields_json_format
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      json
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic'},
+                     body: /\A{"timestamp":\d+.,"foo":"bar","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_with_sumo_metadata_with_fields_fields_format
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      fields
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic'},
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
+                     times:1
+  end
+
   def test_emit_json_no_timestamp
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
