@@ -36,7 +36,7 @@ class SumologicConnection
         raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2"
       end
     end
-    if !collected_fields.nil?
+    unless collected_fields.nil?
       headers['X-Sumo-Fields'] = collected_fields
     end
     return headers
