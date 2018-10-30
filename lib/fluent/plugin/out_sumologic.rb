@@ -245,6 +245,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
       key           = sumo_key(sumo_metadata, record, tag)
       log_format    = sumo_metadata['log_format'] || @log_format
+      log_fields    = sumo_metadata['fields'] || ""
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
@@ -268,7 +269,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           end
           merged_hash = merge_json(record)
           log = dump_log(merged_hash.slice(:timestamp, @log_key))
-          log_fields = merged_hash.select {|k,v| (k != :timestamp && k != @log_key)}.map{|k,v| "#{k}=#{v}"}.join(',')
+          log_fields << merged_hash.select {|k,v| (k != :timestamp && k != @log_key)}.map{|k,v| "#{k}=#{v}"}.join(',')
         else
           if @add_timestamp
             record = { :timestamp => sumo_timestamp(time) }.merge(record)
