@@ -202,6 +202,17 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     time.to_s.length == 13 ? time : time * 1000
   end
 
+  # FIXME: Add some checks for expected formatting
+  def sumo_fields(sumo_metadata)
+    fields = sumo_metadata['fields'] || ""
+    Hash[
+        fields.split(',').map do |pair|
+          k, v = pair.split('=', 2)
+          [k, v]
+        end
+    ]
+  end
+
   # copy from https://github.com/uken/fluent-plugin-elasticsearch/commit/1722c58758b4da82f596ecb0a5075d3cb6c99b2e#diff-33bfa932bf1443760673c69df745272eR221
   def expand_param(param, tag, time, record)
     # check for '${ ... }'
@@ -245,7 +256,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
       key           = sumo_key(sumo_metadata, record, tag)
       log_format    = sumo_metadata['log_format'] || @log_format
-      log_fields    = sumo_metadata['fields'] || ""
+      log_fields    = sumo_fields(sumo_metadata)
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
@@ -269,7 +280,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           end
           merged_hash = merge_json(record)
           log = dump_log(merged_hash.slice(:timestamp, @log_key))
-          log_fields << merged_hash.select {|k,v| (k != :timestamp && k != @log_key)}.map{|k,v| "#{k}=#{v}"}.join(',')
+          fields_from_payload = merged_hash.select {|k,v| (k != :timestamp && k != @log_key && k != '_sumo_metadata')}
+          log_fields = fields_from_payload.merge(log_fields)
         else
           if @add_timestamp
             record = { :timestamp => sumo_timestamp(time) }.merge(record)
@@ -303,7 +315,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           source_name         =source_name,
           data_type           =@data_type,
           metric_data_format  =@metric_data_format,
-          collected_fields    =log_fields
+          collected_fields    =log_fields.map{|k,v| "#{k}=#{v}"}.join(',')
       )
     end
 
