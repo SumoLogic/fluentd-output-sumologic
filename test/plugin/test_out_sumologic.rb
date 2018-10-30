@@ -301,11 +301,11 @@ class SumologicOutput < Test::Unit::TestCase
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=bar, sumo = logic"
+          "fields": "foo=shark, sumo = logic"
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
-                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic'},
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=shark, sumo = logic'},
                      body: /\A{"timestamp":\d+.,"message":"test"}\z/,
                      times:1
   end
