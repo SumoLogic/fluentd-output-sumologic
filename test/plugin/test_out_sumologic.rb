@@ -136,6 +136,27 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_empty_fields
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      fields
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => 'test'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
+                     times:1
+  end
+
   def test_emit_fields_no_timestamp
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
