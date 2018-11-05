@@ -297,11 +297,11 @@ class SumologicOutput < Test::Unit::TestCase
     stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
     ENV['HOST'] = "foo"
     driver.run do
-      driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
+      driver.feed("output.test", time, {'foo' => 'shark', 'message' => 'test', '_sumo_metadata' => {
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=shark, sumo = logic"
+          "fields": "foo=bar, sumo = logic"
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
