@@ -290,9 +290,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             record = { :timestamp => sumo_timestamp(time) }.merge(record)
           end
           merged_hash = merge_json(record)
-          puts 11
           log = dump_log(merged_hash.select {|k,v| [:timestamp, @log_key].include?(k)})
-          puts 6
           fields_from_payload = merged_hash.select {|k,v| (k != :timestamp && k != @log_key && k != '_sumo_metadata')}
           log_fields = log_fields.merge(fields_from_payload)
         else
