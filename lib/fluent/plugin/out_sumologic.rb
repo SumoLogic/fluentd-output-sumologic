@@ -43,7 +43,7 @@ class SumologicConnection
   end
 
   def ssl_options(verify_ssl)
-    verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+    verify_ssl==true ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
   end
 
   def create_http_client(verify_ssl, connect_timeout, proxy_uri, disable_cookies)
