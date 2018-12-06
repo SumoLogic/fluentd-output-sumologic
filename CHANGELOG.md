@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.3.2"></a>
+# [1.3.2] (2018-12-05)
+
+* Fix verify SSL bug
+
 <a name="1.3.1"></a>
 # [1.3.1] (2018-08-30)
 
