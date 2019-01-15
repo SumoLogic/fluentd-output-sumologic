@@ -69,6 +69,7 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.delimiter, '.'
     assert_equal instance.open_timeout, 60
     assert_equal instance.add_timestamp, true
+    assert_equal instance.timestamp_key, 'timestamp'
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
   end
@@ -218,6 +219,27 @@ class SumologicOutput < Test::Unit::TestCase
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
                      body: /\A{"foo":"bar","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_json_timestamp_key
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      json
+      source_category test
+      source_host     test
+      source_name     test
+      timestamp_key   ts
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => 'test'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"ts":\d+.,"message":"test"}\z/,
                      times:1
   end
 

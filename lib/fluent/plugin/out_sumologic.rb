@@ -80,6 +80,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :delimiter, :string, :default => "."
   config_param :open_timeout, :integer, :default => 60
   config_param :add_timestamp, :bool, :default => true
+  config_param :timestamp_key, :string, :default => 'timestamp'
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
 
@@ -255,12 +256,12 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           end
         when 'json_merge'
           if @add_timestamp
-            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+            record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
           end
           log = dump_log(merge_json(record))
         else
           if @add_timestamp
-            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+            record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
           end
           log = dump_log(record)
         end
