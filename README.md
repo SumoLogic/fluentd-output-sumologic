@@ -31,7 +31,8 @@ Configuration options for fluent.conf are:
   * json_merge - Same as json but merge content of `log_key` into the top level and strip `log_key`
 * `log_key` - Used to specify the key when merging json or sending logs in text format (default `message`)
 * `open_timeout` - Set timeout seconds to wait until connection is opened.
-* `add_timestamp` - Add `timestamp` field to logs before sending to sumologic (default `true`)
+* `add_timestamp` - Add `timestamp` (or `timestamp_key`) field to logs before sending to sumologic (default `true`)
+* `timestamp_key` - Field name when `add_timestamp` is on (default `timestamp`)
 * `proxy_uri` - Add the `uri` of the `proxy` environment if present.
 * `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` (Default is `graphite `)
 * `disable_cookies` - Option to disable cookies on the HTTP Client. (Default is `false `)
