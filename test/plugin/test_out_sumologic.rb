@@ -179,6 +179,27 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_json_merge_timestamp
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      json_merge
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => '{"timestamp":123}'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"timestamp":123}\z/,
+                     times:1
+  end
+
   def test_emit_with_sumo_metadata
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
