@@ -146,7 +146,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       log = record[@log_key].strip
       if log[0].eql?('{') && log[-1].eql?('}')
         begin
-          record = JSON.parse(log).merge(record)
+          record = record.merge(JSON.parse(log))
           record.delete(@log_key)
         rescue JSON::ParserError
           # do nothing, ignore
