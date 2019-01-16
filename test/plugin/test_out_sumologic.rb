@@ -175,7 +175,7 @@ class SumologicOutput < Test::Unit::TestCase
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
-                     body: /\A{"foo2":"bar2","timestamp":\d+,"foo":"bar"}\z/,
+                     body: /\A{"timestamp":\d+,"foo":"bar","foo2":"bar2"}\z/,
                      times:1
   end
 
