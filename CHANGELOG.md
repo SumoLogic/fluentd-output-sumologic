@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.4.0"></a>
+# [1.4.0] (2019-01-16)
+
+* [Add timestamp_key, prefer log message when merging](https://github.com/SumoLogic/fluentd-output-sumologic/pull/37)
+
 <a name="1.3.2"></a>
 # [1.3.2] (2018-12-05)
 
