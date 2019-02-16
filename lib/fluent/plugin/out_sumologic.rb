@@ -32,8 +32,10 @@ class SumologicConnection
         headers['Content-Type'] = 'application/vnd.sumologic.graphite'
       when 'carbon2'
         headers['Content-Type'] = 'application/vnd.sumologic.carbon2'
+      when 'prometheus'
+        headers['Content-Type'] = 'application/vnd.sumologic.prometheus'
       else
-        raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2"
+        raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2 or prometheus"
       end
     end
     return headers
@@ -63,9 +65,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   LOGS_DATA_TYPE = "logs"
   METRICS_DATA_TYPE = "metrics"
   DEFAULT_DATA_TYPE = LOGS_DATA_TYPE
-  GRAPHITE_METRIC_FORMAT_TYPE = "graphite"
-  CARBON2_METRIC_FORMAT_TYPE = "carbon2"
-  DEFAULT_METRIC_FORMAT_TYPE = CARBON2_METRIC_FORMAT_TYPE
+  DEFAULT_METRIC_FORMAT_TYPE = 'graphite'
 
   config_param :data_type, :string, :default => DEFAULT_DATA_TYPE
   config_param :metric_data_format, :default => DEFAULT_METRIC_FORMAT_TYPE
@@ -121,8 +121,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     end
 
     if conf['data_type'] == METRICS_DATA_TYPE && ! conf['metrics_data_type'].nil?
-      unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2)\z/
-        raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2"
+      unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2|pronetheus)\z/
+        raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2 or prometheus"
       end
     end
 

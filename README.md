@@ -34,7 +34,7 @@ Configuration options for fluent.conf are:
 * `add_timestamp` - Add `timestamp` (or `timestamp_key`) field to logs before sending to sumologic (default `true`)
 * `timestamp_key` - Field name when `add_timestamp` is on (default `timestamp`)
 * `proxy_uri` - Add the `uri` of the `proxy` environment if present.
-* `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` (Default is `graphite `)
+* `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` or `prometheus` (Default is `graphite `)
 * `disable_cookies` - Option to disable cookies on the HTTP Client. (Default is `false `)
 
 ### Example Configuration
