@@ -47,7 +47,7 @@ class SumologicOutput < Test::Unit::TestCase
       metrics_data_type   foo
     }
     exception = assert_raise(Fluent::ConfigError) {create_driver(config)}
-    assert_equal("Invalid metrics_data_type foo must be graphite or carbon2", exception.message)
+    assert_equal("Invalid metrics_data_type foo must be graphite or carbon2 or prometheus", exception.message)
   end
 
   def test_default_configure
@@ -57,7 +57,7 @@ class SumologicOutput < Test::Unit::TestCase
     instance = create_driver(config).instance
 
     assert_equal instance.data_type, 'logs'
-    assert_equal instance.metric_data_format, 'carbon2'
+    assert_equal instance.metric_data_format, 'graphite'
     assert_equal instance.endpoint, 'https://SUMOLOGIC_URL'
     assert_equal instance.log_format, 'json'
     assert_equal instance.log_key, 'message'
@@ -303,6 +303,27 @@ class SumologicOutput < Test::Unit::TestCase
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'Content-Type'=>'application/vnd.sumologic.carbon2'},
                      body: /\Acluster=prod node=lb-1 metric=cpu  ip=2.2.3.4 team=infra 87.2 1501753030\z/,
+                     times:1
+  end
+
+  def test_emit_prometheus
+    config = %{
+      endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
+      data_type           metrics
+      metric_data_format  prometheus
+      source_category     test
+      source_host         test
+      source_name         test
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' =>'cpu{cluster="prod", node="lb-1"} 87.2 1501753030'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'Content-Type'=>'application/vnd.sumologic.prometheus'},
+                     body: 'cpu{cluster="prod", node="lb-1"} 87.2 1501753030',
                      times:1
   end
 
