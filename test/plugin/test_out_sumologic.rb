@@ -213,7 +213,7 @@ class SumologicOutput < Test::Unit::TestCase
       driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
-          "category": "test"
+          "category": "${tag[1]}"
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
