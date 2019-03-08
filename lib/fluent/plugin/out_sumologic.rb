@@ -189,7 +189,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     source_category = sumo_metadata['category'] || @source_category
     source_category = extract_placeholders(source_category, chunk)
 
-    source_host = sumo_metadata['host'] || @source_host
+    source_host = sumo_metadata['host'] || @source_host || ""
     source_host = extract_placeholders(source_host, chunk)
 
     "#{source_name}:#{source_category}:#{source_host}"
