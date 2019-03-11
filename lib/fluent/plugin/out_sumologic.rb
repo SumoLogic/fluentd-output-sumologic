@@ -182,15 +182,15 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     true
   end
 
-  def sumo_key(sumo_metadata, record, tag)
+  def sumo_key(sumo_metadata, chunk)
     source_name = sumo_metadata['source'] || @source_name
-    source_name = expand_param(source_name, tag, nil, record)
+    source_name = extract_placeholders(source_name, chunk) unless source_name.nil?
 
     source_category = sumo_metadata['category'] || @source_category
-    source_category = expand_param(source_category, tag, nil, record)
+    source_category = extract_placeholders(source_category, chunk) unless source_category.nil?
 
     source_host = sumo_metadata['host'] || @source_host
-    source_host = expand_param(source_host, tag, nil, record)
+    source_host = extract_placeholders(source_host, chunk) unless source_host.nil?
 
     "#{source_name}:#{source_category}:#{source_host}"
   end
@@ -200,38 +200,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     time.to_s.length == 13 ? time : time * 1000
   end
 
-  # copy from https://github.com/uken/fluent-plugin-elasticsearch/commit/1722c58758b4da82f596ecb0a5075d3cb6c99b2e#diff-33bfa932bf1443760673c69df745272eR221
-  def expand_param(param, tag, time, record)
-    # check for '${ ... }'
-    #   yes => `eval`
-    #   no  => return param
-    return param if (param =~ /\${.+}/).nil?
-
-    # check for 'tag_parts[]'
-    # separated by a delimiter (default '.')
-    tag_parts = tag.split(@delimiter) unless (param =~ /tag_parts\[.+\]/).nil? || tag.nil?
-
-    # pull out section between ${} then eval
-    inner = param.clone
-    while inner.match(/\${.+}/)
-      to_eval = inner.match(/\${(.+?)}/) { $1 }
-
-      if !(to_eval =~ /record\[.+\]/).nil? && record.nil?
-        return to_eval
-      elsif !(to_eval =~/tag_parts\[.+\]/).nil? && tag_parts.nil?
-        return to_eval
-      elsif !(to_eval =~/time/).nil? && time.nil?
-        return to_eval
-      else
-        inner.sub!(/\${.+?}/, eval(to_eval))
-      end
-    end
-    inner
-  end
-
   # This method is called every flush interval. Write the buffer chunk
   def write(chunk)
-    tag = chunk.metadata.tag
     messages_list = {}
 
     # Sort messages
@@ -240,7 +210,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       # https://github.com/uken/fluent-plugin-elasticsearch/commit/8597b5d1faf34dd1f1523bfec45852d380b26601#diff-ae62a005780cc730c558e3e4f47cc544R94
       next unless record.is_a? Hash
       sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
-      key           = sumo_key(sumo_metadata, record, tag)
+      key           = sumo_key(sumo_metadata, chunk)
       log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
