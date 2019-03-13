@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |gem|
   gem.name          = "fluent-plugin-sumologic_output"
-  gem.version       = "1.4.1"
+  gem.version       = "0.0.0"
   gem.authors       = ["Steven Adams", "Frank Reno"]
   gem.email         = ["stevezau@gmail.com", "frank.reno@me.com"]
   gem.description   = %q{Output plugin to SumoLogic HTTP Endpoint}
@@ -16,7 +16,6 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}) { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
-  gem.has_rdoc      = false
 
   gem.required_ruby_version = '>= 2.0.0'
 

@@ -1,6 +1,5 @@
 lang: ruby
-script: bundle exec rake
-rvm: 2.3
+script: ci/build.sh
 deploy:
   provider: rubygems
   api_key:
