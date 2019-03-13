@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "Starting build process in: `pwd`"
 set -e
 
-if [[ ! -z "$TRAVIS_TAG" ]]; then
-    echo "Building for tag $TRAVIS_TAG, modify .gemspec file..."
-    sed -i '' "s/0.0.0/$TRAVIS_TAG/g" ./fluent-plugin-sumologic_output.gemspec
-fi
+VERSION="${TRAVIS_TAG:=0.0.0}"
+echo "Building for tag $VERSION, modify .gemspec file..."
+sed -i.bak "s/0.0.0/$VERSION/g" ./fluent-plugin-sumologic_output.gemspec
+rm -f ./fluent-plugin-sumologic_output.gemspec.bak
 
 echo "Install bundler..."
 bundle install
