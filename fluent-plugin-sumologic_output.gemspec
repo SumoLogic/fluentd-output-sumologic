@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |gem|
   gem.name          = "fluent-plugin-sumologic_output"
-  gem.version       = "1.4.0"
+  gem.version       = "1.4.1"
   gem.authors       = ["Steven Adams", "Frank Reno"]
   gem.email         = ["stevezau@gmail.com", "frank.reno@me.com"]
   gem.description   = %q{Output plugin to SumoLogic HTTP Endpoint}
