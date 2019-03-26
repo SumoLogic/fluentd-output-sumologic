@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
 <a name="1.4.0"></a>
+# [1.4.1] (2019-03-13)
+
+- Add option for sending metrics in Prometheus format [#39](https://github.com/SumoLogic/fluentd-output-sumologic/pull/39) 
+- Use the build-in extract_placeholders method for header expanding [#40](https://github.com/SumoLogic/fluentd-output-sumologic/pull/40)
+
+__NOTE:__ there is a breaking change in the placeholders: `tag_parts[n]` is replaced by `tag[n]` [#47](https://github.com/SumoLogic/fluentd-output-sumologic/issues/47)
+
+<a name="1.4.0"></a>
 # [1.4.0] (2019-01-16)
 
 * [Add timestamp_key, prefer log message when merging](https://github.com/SumoLogic/fluentd-output-sumologic/pull/37)
