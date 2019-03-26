@@ -21,10 +21,10 @@ Configuration options for fluent.conf are:
 * `data_type` - The type of data that will be sent to Sumo Logic, either `logs` or `metrics` (Default is `logs `)
 * `endpoint` - SumoLogic HTTP Collector URL
 * `verify_ssl` - Verify ssl certificate. (default is `true`)
-* `source_category` - Set _sourceCategory metadata field within SumoLogic (default is `nil`)
-* `source_name` - Set _sourceName metadata field within SumoLogic - overrides source_name_key (default is `nil`)
+* `source_category`<sup>*</sup> - Set _sourceCategory metadata field within SumoLogic (default is `nil`)
+* `source_name`<sup>*</sup> - Set _sourceName metadata field within SumoLogic - overrides source_name_key (default is `nil`)
 * `source_name_key` - Set as source::path_key's value so that the source_name can be extracted from Fluentd's buffer (default `source_name`)
-* `source_host` - Set _sourceHost metadata field within SumoLogic (default is `nil`)
+* `source_host`<sup>*</sup> - Set _sourceHost metadata field within SumoLogic (default is `nil`)
 * `log_format` - Format to post logs into Sumo. (default `json`)
   * text - Logs will appear in SumoLogic in text format (taken from the field specified in `log_key`)
   * json - Logs will appear in SumoLogic in json format.
@@ -36,6 +36,8 @@ Configuration options for fluent.conf are:
 * `proxy_uri` - Add the `uri` of the `proxy` environment if present.
 * `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` or `prometheus` (Default is `graphite `)
 * `disable_cookies` - Option to disable cookies on the HTTP Client. (Default is `false `)
+
+__NOTE:__ <sup>*</sup> [Placeholders](https://docs.fluentd.org/v1.0/articles/buffer-section#placeholders) are supported
 
 ### Example Configuration
 Reading from the JSON formatted log files with `in_tail` and wildcard filenames:
