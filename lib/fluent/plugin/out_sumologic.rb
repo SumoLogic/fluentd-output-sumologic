@@ -12,14 +12,14 @@ class SumologicConnection
     create_http_client(verify_ssl, connect_timeout, proxy_uri, disable_cookies)
   end
 
-  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type)
-    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name, data_type, metric_data_type))
+  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type, collected_fields)
+    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name, data_type, metric_data_type, collected_fields))
     unless response.ok?
       raise RuntimeError, "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
   end
 
-  def request_headers(source_host, source_category, source_name, data_type, metric_data_format)
+  def request_headers(source_host, source_category, source_name, data_type, metric_data_format, collected_fields)
     headers = {
         'X-Sumo-Name'     => source_name,
         'X-Sumo-Category' => source_category,
@@ -37,6 +37,9 @@ class SumologicConnection
       else
         raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2 or prometheus"
       end
+    end
+    unless collected_fields.nil?
+      headers['X-Sumo-Fields'] = collected_fields
     end
     return headers
   end
@@ -114,8 +117,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
     if conf['data_type'].nil? || conf['data_type'] == LOGS_DATA_TYPE
       unless conf['log_format'].nil?
-        unless conf['log_format'] =~ /\A(?:json|text|json_merge)\z/
-          raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json or json_merge"
+        unless conf['log_format'] =~ /\A(?:json|text|json_merge|fields)\z/
+          raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json, json_merge or fields"
         end
       end
     end
@@ -200,9 +203,28 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     time.to_s.length == 13 ? time : time * 1000
   end
 
+  def sumo_fields(sumo_metadata)
+    fields = sumo_metadata['fields'] || ""
+    Hash[
+        fields.split(',').map do |pair|
+          k, v = pair.split('=', 2)
+          [k, v]
+        end
+    ]
+  end
+
+  def dump_collected_fields(log_fields)
+    if log_fields.nil?
+      log_fields
+    else
+      log_fields.map{|k,v| "#{k}=#{v}"}.join(',')
+    end
+  end
+
   # This method is called every flush interval. Write the buffer chunk
   def write(chunk)
     messages_list = {}
+    log_fields = nil
 
     # Sort messages
     chunk.msgpack_each do |time, record|
@@ -212,6 +234,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
       key           = sumo_key(sumo_metadata, chunk)
       log_format    = sumo_metadata['log_format'] || @log_format
+
+      if log_format.eql? 'fields'
+        log_fields    = sumo_fields(sumo_metadata)
+      end
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
@@ -229,6 +255,11 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
             record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
           end
           log = dump_log(merge_json(record))
+        when 'fields'
+          if @add_timestamp
+            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+          end
+          log = dump_log(record)
         else
           if @add_timestamp
             record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
@@ -261,7 +292,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           source_category     =source_category,
           source_name         =source_name,
           data_type           =@data_type,
-          metric_data_format  =@metric_data_format
+          metric_data_format  =@metric_data_format,
+          collected_fields    =dump_collected_fields(log_fields)
       )
     end
 
