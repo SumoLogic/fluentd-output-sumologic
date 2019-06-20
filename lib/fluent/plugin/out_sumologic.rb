@@ -235,10 +235,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       key           = sumo_key(sumo_metadata, chunk)
       log_format    = sumo_metadata['log_format'] || @log_format
 
-      if log_format.eql? 'fields'
-        log_fields    = sumo_fields(sumo_metadata)
-      end
-
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
 
@@ -256,8 +252,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           end
           log = dump_log(merge_json(record))
         when 'fields'
+          log_fields = sumo_fields(sumo_metadata)
           if @add_timestamp
-            record = { :timestamp => sumo_timestamp(time) }.merge(record)
+            record = {  @timestamp_key => sumo_timestamp(time) }.merge(record)
           end
           log = dump_log(record)
         else
