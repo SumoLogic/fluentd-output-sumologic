@@ -37,7 +37,7 @@ class SumologicOutput < Test::Unit::TestCase
       log_format    foo
     }
     exception = assert_raise(Fluent::ConfigError) {create_driver(config)}
-    assert_equal("Invalid log_format foo must be text, json or json_merge", exception.message)
+    assert_equal("Invalid log_format foo must be text, json, json_merge or fields", exception.message)
   end
 
   def test_invalid_metrics_data_type
@@ -113,6 +113,27 @@ class SumologicOutput < Test::Unit::TestCase
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
                      body: /\A{"timestamp":\d+.,"foo":"bar","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_empty_fields
+    config = %{
+	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+	      log_format      fields
+	      source_category test
+	      source_host     test
+	      source_name     test
+
+	    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => 'test'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
                      times:1
   end
 
@@ -197,6 +218,52 @@ class SumologicOutput < Test::Unit::TestCase
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
                      body: /\A{"timestamp":123}\z/,
+                     times:1
+  end
+
+  def test_emit_with_sumo_metadata_with_fields_json_format
+    config = %{
+	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+	      log_format      json
+	    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test'},
+                     body: /\A{"timestamp":\d+.,"foo":"bar","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_with_sumo_metadata_with_fields_fields_format
+    config = %{
+	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+	      log_format      fields
+	    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'shark', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic'},
+                     body: /\A{"timestamp":\d+.,"foo":"shark","message":"test"}\z/,
                      times:1
   end
 
