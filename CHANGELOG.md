@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
-<a name="1.4.0"></a>
+<a name="1.5.0"></a>
+# [1.5.0] (2019-06-26)
+- Add support for new log format fields: [#49](https://github.com/SumoLogic/fluentd-output-sumologic/pull/49)
+
+<a name="1.4.1"></a>
 # [1.4.1] (2019-03-13)
 
 - Add option for sending metrics in Prometheus format [#39](https://github.com/SumoLogic/fluentd-output-sumologic/pull/39) 
