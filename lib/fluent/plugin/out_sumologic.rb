@@ -76,6 +76,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :log_format, :string, :default => 'json'
   config_param :log_key, :string, :default => 'message'
   config_param :source_category, :string, :default => nil
+  config_param :source_category_prefix, :string, :default => nil
   config_param :source_name, :string, :default => nil
   config_param :source_name_key, :string, :default => 'source_name'
   config_param :source_host, :string, :default => nil
@@ -186,13 +187,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   end
 
   def sumo_key(sumo_metadata, chunk)
-    source_name = sumo_metadata['source'] || @source_name
+    source_name = @source_name || sumo_metadata['source']
     source_name = extract_placeholders(source_name, chunk) unless source_name.nil?
 
-    source_category = sumo_metadata['category'] || @source_category
+    source_category = @source_category || sumo_metadata['category']
+    source_category.prepend(@source_category_prefix) unless @source_category_prefix.nil? or source_category.nil?
     source_category = extract_placeholders(source_category, chunk) unless source_category.nil?
 
-    source_host = sumo_metadata['host'] || @source_host
+    source_host = @source_host || sumo_metadata['host']
     source_host = extract_placeholders(source_host, chunk) unless source_host.nil?
 
     "#{source_name}:#{source_category}:#{source_host}"
