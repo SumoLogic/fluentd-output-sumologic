@@ -73,7 +73,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :data_type, :string, :default => DEFAULT_DATA_TYPE
   config_param :metric_data_format, :default => DEFAULT_METRIC_FORMAT_TYPE
   config_param :endpoint, :string, secret: true
-  config_param :log_format, :string, :default => 'json'
   config_param :log_key, :string, :default => 'message'
   config_param :source_category, :string, :default => nil
   config_param :source_name, :string, :default => nil
@@ -115,14 +114,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       end
     end
 
-    if conf['data_type'].nil? || conf['data_type'] == LOGS_DATA_TYPE
-      unless conf['log_format'].nil?
-        unless conf['log_format'] =~ /\A(?:json|text|json_merge|fields)\z/
-          raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json, json_merge or fields"
-        end
-      end
-    end
-
     if conf['data_type'] == METRICS_DATA_TYPE && ! conf['metrics_data_type'].nil?
       unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2|pronetheus)\z/
         raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2 or prometheus"
@@ -143,29 +134,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     super
   end
 
-  # Used to merge log record into top level json
-  def merge_json(record)
-    if record.has_key?(@log_key)
-      log = record[@log_key].strip
-      if log[0].eql?('{') && log[-1].eql?('}')
-        begin
-          record = record.merge(JSON.parse(log))
-          record.delete(@log_key)
-        rescue JSON::ParserError
-          # do nothing, ignore
-        end
-      end
-    end
-    record
-  end
-
   # Strip sumo_metadata and dump to json
-  def dump_log(log)
-    log.delete('_sumo_metadata')
+  def dump_log(record)
+    log = record['message']
+    return log.strip if log.is_a?(String)
     begin
       parser = Yajl::Parser.new
-      hash = parser.parse(log[@log_key])
-      log[@log_key] = hash
+      log[@log_key].strip!
+      log[@log_key] = parser.parse(log[@log_key]) if log[@log_key]
       Yajl.dump(log)
     rescue
       Yajl.dump(log)
@@ -198,18 +174,13 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
-  # Convert timestamp to 13 digit epoch if necessary
-  def sumo_timestamp(time)
-    time.to_s.length == 13 ? time : time * 1000
-  end
-
   def sumo_fields(sumo_metadata)
     fields = sumo_metadata['fields'] || ""
     Hash[
-        fields.split(',').map do |pair|
-          k, v = pair.split('=', 2)
-          [k, v]
-        end
+      fields.split(',').map do |pair|
+        k, v = pair.split('=', 2)
+        [k, v]
+      end
     ]
   end
 
@@ -233,36 +204,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       next unless record.is_a? Hash
       sumo_metadata = record.fetch('_sumo_metadata', {:source => record[@source_name_key] })
       key           = sumo_key(sumo_metadata, chunk)
-      log_format    = sumo_metadata['log_format'] || @log_format
 
       # Strip any unwanted newlines
       record[@log_key].chomp! if record[@log_key] && record[@log_key].respond_to?(:chomp!)
 
       case @data_type
       when 'logs'
-        case log_format
-        when 'text'
-          log = record[@log_key]
-          unless log.nil?
-            log.strip!
-          end
-        when 'json_merge'
-          if @add_timestamp
-            record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
-          end
-          log = dump_log(merge_json(record))
-        when 'fields'
-          log_fields = sumo_fields(sumo_metadata)
-          if @add_timestamp
-            record = {  @timestamp_key => sumo_timestamp(time) }.merge(record)
-          end
-          log = dump_log(record)
-        else
-          if @add_timestamp
-            record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
-          end
-          log = dump_log(record)
-        end
+        log_fields = sumo_fields(sumo_metadata)
+        log = dump_log(record)
       when 'metrics'
         log = record[@log_key]
         unless log.nil?
@@ -277,7 +226,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           messages_list[key] = [log]
         end
       end
-
     end
 
     # Push logs to sumo
@@ -293,6 +241,5 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           collected_fields    =dump_collected_fields(log_fields)
       )
     end
-
   end
 end
