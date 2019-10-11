@@ -116,7 +116,7 @@ class SumologicOutput < Test::Unit::TestCase
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=bar, sumo = logic"
+          "fields": {"foo"=>"bar", " sumo " => " logic"}
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
@@ -141,7 +141,7 @@ class SumologicOutput < Test::Unit::TestCase
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=bar, sumo = logic"
+          "fields": {"foo"=>"bar", " sumo " => " logic"}
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
@@ -166,7 +166,7 @@ class SumologicOutput < Test::Unit::TestCase
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=bar, sumo = logic"
+          "fields": {"foo"=>"bar", " sumo " => " logic"}
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
@@ -192,7 +192,7 @@ class SumologicOutput < Test::Unit::TestCase
           "host": "#{ENV['HOST']}",
           "source": "${tag}",
           "category": "test",
-          "fields": "foo=bar, sumo = logic"
+          "fields": {"foo"=>"bar", " sumo " => " logic"}
       }})
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",

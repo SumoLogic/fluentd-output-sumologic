@@ -172,16 +172,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     "#{source_name}:#{source_category}:#{source_host}"
   end
 
-  def sumo_fields(sumo_metadata)
-    fields = sumo_metadata['fields'] || ""
-    Hash[
-      fields.split(',').map do |pair|
-        k, v = pair.split('=', 2)
-        [k, v]
-      end
-    ]
-  end
-
   def dump_collected_fields(log_fields)
     if log_fields.nil?
       log_fields
@@ -208,7 +198,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
       case @data_type
       when 'logs'
-        log_fields = sumo_fields(sumo_metadata)
+        log_fields = sumo_metadata['fields']
         log = dump_log(record)
       when 'metrics'
         log = record[@log_key]
