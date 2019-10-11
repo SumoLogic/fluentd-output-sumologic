@@ -58,8 +58,6 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.verify_ssl, true
     assert_equal instance.delimiter, '.'
     assert_equal instance.open_timeout, 60
-    assert_equal instance.add_timestamp, true
-    assert_equal instance.timestamp_key, 'timestamp'
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
   end
