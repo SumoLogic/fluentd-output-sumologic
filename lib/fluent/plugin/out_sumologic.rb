@@ -81,8 +81,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :verify_ssl, :bool, :default => true
   config_param :delimiter, :string, :default => "."
   config_param :open_timeout, :integer, :default => 60
-  config_param :add_timestamp, :bool, :default => true
-  config_param :timestamp_key, :string, :default => 'timestamp'
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
 
