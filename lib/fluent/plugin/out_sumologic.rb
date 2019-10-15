@@ -195,7 +195,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     source_host = sumo_metadata['host'] || @source_host
     source_host = extract_placeholders(source_host, chunk) unless source_host.nil?
 
-    "#{source_name}:#{source_category}:#{source_host}"
+    fields = sumo_metadata['fields'] || ""
+    fields = extract_placeholders(fields, chunk) unless fields.nil?
+
+    "#{source_name}:#{source_category}:#{source_host}:#{fields}"
   end
 
   # Convert timestamp to 13 digit epoch if necessary
@@ -203,28 +206,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     time.to_s.length == 13 ? time : time * 1000
   end
 
-  def sumo_fields(sumo_metadata)
-    fields = sumo_metadata['fields'] || ""
-    Hash[
-        fields.split(',').map do |pair|
-          k, v = pair.split('=', 2)
-          [k, v]
-        end
-    ]
-  end
-
-  def dump_collected_fields(log_fields)
-    if log_fields.nil?
-      log_fields
-    else
-      log_fields.map{|k,v| "#{k}=#{v}"}.join(',')
-    end
-  end
-
   # This method is called every flush interval. Write the buffer chunk
   def write(chunk)
     messages_list = {}
-    log_fields = nil
 
     # Sort messages
     chunk.msgpack_each do |time, record|
@@ -252,7 +236,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           end
           log = dump_log(merge_json(record))
         when 'fields'
-          log_fields = sumo_fields(sumo_metadata)
           if @add_timestamp
             record = {  @timestamp_key => sumo_timestamp(time) }.merge(record)
           end
@@ -282,7 +265,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
     # Push logs to sumo
     messages_list.each do |key, messages|
-      source_name, source_category, source_host = key.split(':')
+      source_name, source_category, source_host, fields = key.split(':')
       @sumo_conn.publish(
           messages.join("\n"),
           source_host         =source_host,
@@ -290,7 +273,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           source_name         =source_name,
           data_type           =@data_type,
           metric_data_format  =@metric_data_format,
-          collected_fields    =dump_collected_fields(log_fields)
+          collected_fields    =fields
       )
     end
 
