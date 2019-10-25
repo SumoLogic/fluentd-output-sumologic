@@ -455,7 +455,7 @@ class SumologicOutput < Test::Unit::TestCase
       driver.feed("output.test", time, {'message' => 'test1'})
       driver.feed("output.test", time, {'message' => 'test2', '_sumo_metadata' => {"fields": "foo=bar"}})
       driver.feed("output.test", time, {'message' => 'test3', '_sumo_metadata' => {"fields": "foo=bar,sumo=logic"}})
-      driver.feed("output.test", time, {'message' => 'test4', '_sumo_metadata' => {"fields": "foo=bar,abc=123"}})
+      driver.feed("output.test", time, {'message' => 'test4', '_sumo_metadata' => {"fields": "foo=bar,master_url=https://100.64.0.1:443"}})
     end
     assert_requested  :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                       headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
@@ -470,7 +470,7 @@ class SumologicOutput < Test::Unit::TestCase
                       body: /\A{"timestamp":\d+.,"message":"test3"}\z/,
                       times:1
     assert_requested  :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
-                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'X-Sumo-Fields' => 'foo=bar,abc=123'},
+                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'X-Sumo-Fields' => 'foo=bar,master_url=https://100.64.0.1:443'},
                       body: /\A{"timestamp":\d+.,"message":"test4"}\z/,
                       times:1
   end
