@@ -198,7 +198,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     fields = sumo_metadata['fields'] || ""
     fields = extract_placeholders(fields, chunk) unless fields.nil?
 
-    "#{source_name}:#{source_category}:#{source_host}:#{fields}"
+    { :source_name => "#{source_name}", :source_category => "#{source_category}",
+      :source_host => "#{source_host}", :fields => "#{fields}" }
   end
 
   # Convert timestamp to 13 digit epoch if necessary
@@ -265,7 +266,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
     # Push logs to sumo
     messages_list.each do |key, messages|
-      source_name, source_category, source_host, fields = key.split(':')
+      source_name, source_category, source_host, fields = key[:source_name], key[:source_category],
+        key[:source_host], key[:fields]
       @sumo_conn.publish(
           messages.join("\n"),
           source_host         =source_host,
