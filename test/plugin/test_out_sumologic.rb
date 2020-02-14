@@ -545,27 +545,6 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
-  def test_batching_same_headers
-    config = %{
-      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
-      log_format      json
-      source_category test
-      source_host     test
-      source_name     test
-    }
-    driver = create_driver(config)
-    time = event_time
-    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
-    driver.run do
-      driver.feed("output.test", time, {'message' => 'test1'})
-      driver.feed("output.test", time, {'message' => 'test2'})
-    end
-    assert_requested  :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
-                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
-                      body: /\A{"timestamp":\d+.,"message":"test1"}\n{"timestamp":\d+.,"message":"test2"}\z/,
-                      times:1
-  end
-
   def test_batching_different_headers
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234

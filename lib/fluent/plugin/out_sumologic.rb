@@ -362,16 +362,18 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
         fields = [fields,@custom_fields].compact.join(",")
       end
 
-      @sumo_conn.publish(
-          messages.join("\n"),
-          source_host         =source_host,
-          source_category     =source_category,
-          source_name         =source_name,
-          data_type           =@data_type,
-          metric_data_format  =@metric_data_format,
-          collected_fields    =fields,
-          dimensions          =@custom_dimensions
-      )
+      messages.each do |message|
+        @sumo_conn.publish(
+            message,
+            source_host         =source_host,
+            source_category     =source_category,
+            source_name         =source_name,
+            data_type           =@data_type,
+            metric_data_format  =@metric_data_format,
+            collected_fields    =fields,
+            dimensions          =@custom_dimensions
+        )
+      end
     end
 
   end
