@@ -87,7 +87,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
   # https://help.sumologic.com/Manage/Fields
-  desc 'Fields string (eg "a=b,c=d") which is going to be added to every record.'
+  desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every record.'
   config_param :custom_fields, :string, :default => nil
 
   config_section :buffer do
