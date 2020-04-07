@@ -72,6 +72,7 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.timestamp_key, 'timestamp'
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
+    assert_equal instance.sumo_client, 'fluentd-output'
   end
 
   def test_emit_text
@@ -91,6 +92,28 @@ class SumologicOutput < Test::Unit::TestCase
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: "test",
+                     times:1
+  end
+
+  def test_emit_text_custom_sumo_client
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      text
+      source_category test
+      source_host     test
+      source_name     test
+      sumo_client     'fluentd-custom-sender'
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => 'test'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-custom-sender', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
                      body: "test",
                      times:1
   end
