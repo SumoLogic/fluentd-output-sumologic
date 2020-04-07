@@ -267,6 +267,78 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_with_sumo_metadata_with_fields_and_custom_fields_fields_format
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      fields
+      custom_fields   "lorem=ipsum,dolor=amet"
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'shark', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic,lorem=ipsum,dolor=amet'},
+                     body: /\A{"timestamp":\d+.,"foo":"shark","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_with_sumo_metadata_with_fields_and_empty_custom_fields_fields_format
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      fields
+      custom_fields   ""
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'shark', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": "foo=bar, sumo = logic"
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'foo=bar, sumo = logic'},
+                     body: /\A{"timestamp":\d+.,"foo":"shark","message":"test"}\z/,
+                     times:1
+  end
+
+  def test_emit_with_sumo_metadata_with_empty_fields_and_custom_fields_fields_format
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      fields
+      custom_fields   "lorem=ipsum"
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    ENV['HOST'] = "foo"
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'shark', 'message' => 'test', '_sumo_metadata' => {
+          "host": "#{ENV['HOST']}",
+          "source": "${tag}",
+          "category": "test",
+          "fields": ""
+      }})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'foo', 'X-Sumo-Name'=>'output.test', 'X-Sumo-Fields' => 'lorem=ipsum'},
+                     body: /\A{"timestamp":\d+.,"foo":"shark","message":"test"}\z/,
+                     times:1
+  end
+
   def test_emit_with_sumo_metadata
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234

@@ -86,6 +86,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :timestamp_key, :string, :default => 'timestamp'
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
+  # https://help.sumologic.com/Manage/Fields
+  desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every record.'
+  config_param :custom_fields, :string, :default => nil
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -127,6 +130,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2|pronetheus)\z/
         raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2 or prometheus"
       end
+    end
+
+    if conf['custom_fields'].nil? || conf['custom_fields'].strip.length == 0
+      conf['custom_fields'] = nil
     end
 
     @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i, conf['proxy_uri'], conf['disable_cookies'])
@@ -268,6 +275,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     messages_list.each do |key, messages|
       source_name, source_category, source_host, fields = key[:source_name], key[:source_category],
         key[:source_host], key[:fields]
+
+      # Merge custom and record fields
+      if fields.nil? || fields.strip.length == 0
+        fields = @custom_fields
+      else
+        fields = [fields,@custom_fields].compact.join(",")
+      end
+
       @sumo_conn.publish(
           messages.join("\n"),
           source_host         =source_host,
