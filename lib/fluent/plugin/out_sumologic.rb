@@ -7,8 +7,9 @@ class SumologicConnection
 
   attr_reader :http
 
-  def initialize(endpoint, verify_ssl, connect_timeout, proxy_uri, disable_cookies)
+  def initialize(endpoint, verify_ssl, connect_timeout, proxy_uri, disable_cookies, sumo_client)
     @endpoint = endpoint
+    @sumo_client = sumo_client
     create_http_client(verify_ssl, connect_timeout, proxy_uri, disable_cookies)
   end
 
@@ -24,7 +25,7 @@ class SumologicConnection
         'X-Sumo-Name'     => source_name,
         'X-Sumo-Category' => source_category,
         'X-Sumo-Host'     => source_host,
-        'X-Sumo-Client'   => 'fluentd-output'
+        'X-Sumo-Client'   => @sumo_client,
     }
     if data_type == 'metrics'
       case metric_data_format
@@ -89,6 +90,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   # https://help.sumologic.com/Manage/Fields
   desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every record.'
   config_param :custom_fields, :string, :default => nil
+  desc 'Name of sumo client which is send as X-Sumo-Client header'
+  config_param :sumo_client, :string, :default => 'fluentd-output'
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -136,7 +139,19 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       conf['custom_fields'] = nil
     end
 
-    @sumo_conn = SumologicConnection.new(conf['endpoint'], conf['verify_ssl'], conf['open_timeout'].to_i, conf['proxy_uri'], conf['disable_cookies'])
+    # For some reason default is set incorrectly in unit-tests
+    if conf['sumo_client'].nil? || conf['sumo_client'].strip.length == 0
+      conf['sumo_client'] = 'fluentd-output'
+    end
+
+    @sumo_conn = SumologicConnection.new(
+      conf['endpoint'],
+      conf['verify_ssl'],
+      conf['open_timeout'].to_i,
+      conf['proxy_uri'],
+      conf['disable_cookies'],
+      conf['sumo_client']
+      )
     super
   end
 
