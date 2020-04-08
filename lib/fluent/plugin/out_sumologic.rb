@@ -2,19 +2,30 @@ require 'fluent/plugin/output'
 require 'net/https'
 require 'yajl'
 require 'httpclient'
+require 'zlib'
+require 'stringio'
 
 class SumologicConnection
 
   attr_reader :http
 
-  def initialize(endpoint, verify_ssl, connect_timeout, proxy_uri, disable_cookies, sumo_client)
+  COMPRESS_DEFLATE = 'deflate'
+  COMPRESS_GZIP = 'gzip'
+
+  def initialize(endpoint, verify_ssl, connect_timeout, proxy_uri, disable_cookies, sumo_client, compress_enabled, compress_encoding)
     @endpoint = endpoint
     @sumo_client = sumo_client
     create_http_client(verify_ssl, connect_timeout, proxy_uri, disable_cookies)
+    @compress = compress_enabled
+    @compress_encoding = (compress_encoding ||= COMPRESS_GZIP).downcase
+
+    unless [COMPRESS_DEFLATE, COMPRESS_GZIP].include? @compress_encoding
+      raise "Invalid compression encoding #{@compress_encoding} must be gzip or deflate"
+    end
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type, collected_fields)
-    response = http.post(@endpoint, raw_data, request_headers(source_host, source_category, source_name, data_type, metric_data_type, collected_fields))
+    response = http.post(@endpoint, compress(raw_data), request_headers(source_host, source_category, source_name, data_type, metric_data_type, collected_fields))
     unless response.ok?
       raise RuntimeError, "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
@@ -27,6 +38,11 @@ class SumologicConnection
         'X-Sumo-Host'     => source_host,
         'X-Sumo-Client'   => @sumo_client,
     }
+
+    if @compress
+      headers['Content-Encoding'] = @compress_encoding
+    end
+
     if data_type == 'metrics'
       case metric_data_format
       when 'graphite'
@@ -57,6 +73,29 @@ class SumologicConnection
       @http.cookie_manager       = nil
     end
   end
+
+  def compress(content)
+    if @compress
+      if @compress_encoding == COMPRESS_GZIP
+        result = gzip(content)
+        result.bytes.to_a.pack("c*")
+      else
+        Zlib::Deflate.deflate(content)
+      end
+    else
+      content
+    end
+  end # def compress
+  
+  def gzip(content)
+    stream = StringIO.new("w")
+    stream.set_encoding("ASCII")
+    gz = Zlib::GzipWriter.new(stream)
+    gz.mtime=1  # Ensure that for same content there is same output
+    gz.write(content)
+    gz.close
+    stream.string.bytes.to_a.pack("c*")
+  end # def gzip
 end
 
 class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
@@ -92,6 +131,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :custom_fields, :string, :default => nil
   desc 'Name of sumo client which is send as X-Sumo-Client header'
   config_param :sumo_client, :string, :default => 'fluentd-output'
+  desc 'Compress payload'
+  config_param :compress, :bool, :default => false
+  desc 'Encoding method of compresssion (either gzip or deflate)'
+  config_param :compress_encoding, :string, :default => SumologicConnection::COMPRESS_GZIP
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -150,7 +193,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       conf['open_timeout'].to_i,
       conf['proxy_uri'],
       conf['disable_cookies'],
-      conf['sumo_client']
+      conf['sumo_client'],
+      conf['compress'],
+      conf['compress_encoding']
       )
     super
   end

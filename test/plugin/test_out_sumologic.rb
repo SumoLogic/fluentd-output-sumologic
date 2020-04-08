@@ -73,6 +73,7 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
     assert_equal instance.sumo_client, 'fluentd-output'
+    assert_equal instance.compress_encoding, 'gzip'
   end
 
   def test_emit_text
@@ -568,6 +569,51 @@ class SumologicOutput < Test::Unit::TestCase
                       headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'X-Sumo-Fields' => 'foo=bar,master_url=https://100.64.0.1:443'},
                       body: /\A{"timestamp":\d+.,"message":"test4"}\z/,
                       times:1
+  end
+
+  def test_emit_json_merge_timestamp_compress_deflate
+    config = %{
+      endpoint          https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format        json_merge
+      source_category   test
+      source_host       test
+      source_name       test
+      compress          true
+      compress_encoding deflate
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => '{"timestamp":123}'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'Content-Encoding'=>'deflate'},
+                     body: "\x78\x9c\xab\x56\x2a\xc9\xcc\x4d\x2d\x2e\x49\xcc\x2d\x50\xb2\x32\x34\x32\xae\x05\x00\x38\xb0\x05\xe1".force_encoding("ASCII-8BIT"),
+                     times:1
+  end
+
+  def test_emit_json_merge_timestamp_compress_gzip
+    config = %{
+      endpoint          https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format        json_merge
+      source_category   test
+      source_host       test
+      source_name       test
+      compress          true
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' => '{"timestamp":1234}'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'Content-Encoding'=>'gzip'},
+                     body: "\x1f\x8b\x08\x00\x01\x00\x00\x00\x00\x03\xab\x56\x2a\xc9\xcc\x4d\x2d\x2e\x49\xcc\x2d\x50\xb2\x32\x34\x32\x36\xa9\x05\x00\xfe\x53\xbe\x14\x12\x00\x00\x00".force_encoding("ASCII-8BIT"),
+                     times:1
   end
 
 end
