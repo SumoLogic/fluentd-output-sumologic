@@ -17,7 +17,11 @@ class SumologicConnection
     @sumo_client = sumo_client
     create_http_client(verify_ssl, connect_timeout, proxy_uri, disable_cookies)
     @compress = compress_enabled
-    @compress_encoding = (compress_encoding ||= COMPRESS_DEFLATE).downcase
+    @compress_encoding = (compress_encoding ||= COMPRESS_GZIP).downcase
+
+    unless [COMPRESS_DEFLATE, COMPRESS_GZIP].include? @compress_encoding
+      raise "Invalid compression encoding #{@compress_encoding} must be gzip or deflate"
+    end
   end
 
   def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type, collected_fields)
@@ -130,7 +134,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   desc 'Compress payload'
   config_param :compress, :bool, :default => false
   desc 'Encoding method of compresssion (either gzip or deflate)'
-  config_param :compress_encoding, :string, :default => SumologicConnection::COMPRESS_DEFLATE
+  config_param :compress_encoding, :string, :default => SumologicConnection::COMPRESS_GZIP
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE

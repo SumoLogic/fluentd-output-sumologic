@@ -73,6 +73,7 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
     assert_equal instance.sumo_client, 'fluentd-output'
+    assert_equal instance.compress_encoding, 'gzip'
   end
 
   def test_emit_text
@@ -578,6 +579,7 @@ class SumologicOutput < Test::Unit::TestCase
       source_host       test
       source_name       test
       compress          true
+      compress_encoding deflate
 
     }
     driver = create_driver(config)
@@ -600,7 +602,6 @@ class SumologicOutput < Test::Unit::TestCase
       source_host       test
       source_name       test
       compress          true
-      compress_encoding gzip
 
     }
     driver = create_driver(config)
