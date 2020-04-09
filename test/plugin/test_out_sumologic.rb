@@ -343,7 +343,7 @@ class SumologicOutput < Test::Unit::TestCase
     config = %{
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
-      custom_fields   "lorem=ipsum"
+      custom_fields   "lorem=ipsum,invalid"
     }
     driver = create_driver(config)
     time = event_time
@@ -486,6 +486,61 @@ class SumologicOutput < Test::Unit::TestCase
     end
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test', 'Content-Type'=>'application/vnd.sumologic.prometheus'},
+                     body: 'cpu{cluster="prod", node="lb-1"} 87.2 1501753030',
+                     times:1
+  end
+
+  def test_emit_prometheus_with_custom_dimensions
+    config = %{
+      endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
+      data_type           metrics
+      metric_data_format  prometheus
+      source_category     test
+      source_host         test
+      source_name         test
+      custom_dimensions   'foo=bar, dolor=sit,amet,test'
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' =>'cpu{cluster="prod", node="lb-1"} 87.2 1501753030'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {
+                       'X-Sumo-Category'=>'test',
+                       'X-Sumo-Client'=>'fluentd-output',
+                       'X-Sumo-Host'=>'test',
+                       'X-Sumo-Name'=>'test',
+                       'X-Sumo-Dimensions'=>'foo=bar, dolor=sit',
+                       'Content-Type'=>'application/vnd.sumologic.prometheus'},
+                     body: 'cpu{cluster="prod", node="lb-1"} 87.2 1501753030',
+                     times:1
+  end
+
+  def test_emit_prometheus_with_empty_custom_metadata
+    config = %{
+      endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
+      data_type           metrics
+      metric_data_format  prometheus
+      source_category     test
+      source_host         test
+      source_name         test
+      custom_metadata     "    "
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'message' =>'cpu{cluster="prod", node="lb-1"} 87.2 1501753030'})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {
+                       'X-Sumo-Category'=>'test',
+                       'X-Sumo-Client'=>'fluentd-output',
+                       'X-Sumo-Host'=>'test',
+                       'X-Sumo-Name'=>'test',
+                       'Content-Type'=>'application/vnd.sumologic.prometheus'},
                      body: 'cpu{cluster="prod", node="lb-1"} 87.2 1501753030',
                      times:1
   end

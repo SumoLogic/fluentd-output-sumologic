@@ -24,14 +24,14 @@ class SumologicConnection
     end
   end
 
-  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type, collected_fields)
-    response = http.post(@endpoint, compress(raw_data), request_headers(source_host, source_category, source_name, data_type, metric_data_type, collected_fields))
+  def publish(raw_data, source_host=nil, source_category=nil, source_name=nil, data_type, metric_data_type, collected_fields, dimensions)
+    response = http.post(@endpoint, compress(raw_data), request_headers(source_host, source_category, source_name, data_type, metric_data_type, collected_fields, dimensions))
     unless response.ok?
       raise RuntimeError, "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
   end
 
-  def request_headers(source_host, source_category, source_name, data_type, metric_data_format, collected_fields)
+  def request_headers(source_host, source_category, source_name, data_type, metric_data_format, collected_fields, dimensions)
     headers = {
         'X-Sumo-Name'     => source_name,
         'X-Sumo-Category' => source_category,
@@ -53,6 +53,10 @@ class SumologicConnection
         headers['Content-Type'] = 'application/vnd.sumologic.prometheus'
       else
         raise RuntimeError, "Invalid #{metric_data_format}, must be graphite or carbon2 or prometheus"
+      end
+
+      unless dimensions.nil?
+        headers['X-Sumo-Dimensions'] = dimensions
       end
     end
     unless collected_fields.nil?
@@ -127,7 +131,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
   # https://help.sumologic.com/Manage/Fields
-  desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every record.'
+  desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every log record.'
   config_param :custom_fields, :string, :default => nil
   desc 'Name of sumo client which is send as X-Sumo-Client header'
   config_param :sumo_client, :string, :default => 'fluentd-output'
@@ -135,6 +139,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :compress, :bool, :default => false
   desc 'Encoding method of compresssion (either gzip or deflate)'
   config_param :compress_encoding, :string, :default => SumologicConnection::COMPRESS_GZIP
+  # https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Metrics-to-an-HTTP-Source#supported-http-headers
+  desc 'Dimensions string (eg "cluster=payment, service=credit_card") which is going to be added to every metric record.'
+  config_param :custom_dimensions, :string, :default => nil
 
   config_section :buffer do
     config_set_default :@type, DEFAULT_BUFFER_TYPE
@@ -178,8 +185,14 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       end
     end
 
-    if conf['custom_fields'].nil? || conf['custom_fields'].strip.length == 0
-      conf['custom_fields'] = nil
+    conf['custom_fields'] = validate_key_value_pairs(conf['custom_fields'])
+    unless conf['custom_fields']
+      @log.info "Custom fields: #{conf['custom_fields']}"
+    end
+
+    conf['custom_dimensions'] = validate_key_value_pairs(conf['custom_dimensions'])
+    unless conf['custom_dimensions']
+      @log.info "Custom dimensions: #{conf['custom_dimensions']}"
     end
 
     # For some reason default is set incorrectly in unit-tests
@@ -350,9 +363,26 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           source_name         =source_name,
           data_type           =@data_type,
           metric_data_format  =@metric_data_format,
-          collected_fields    =fields
+          collected_fields    =fields,
+          dimensions          =@custom_dimensions
       )
     end
 
+  end
+
+  def validate_key_value_pairs(fields)
+    if fields.nil?
+      return fields
+    end
+
+    fields = fields.split(",").select { |field|
+      field.split('=').length == 2
+    }
+
+    if fields.length == 0
+      return nil
+    end
+
+    fields.join(',')
   end
 end
