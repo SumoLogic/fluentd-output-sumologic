@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.7.0"></a>
+# [1.7.0] (2020-04-23)
+- Add option for specifing custom fields for logs: [#56](https://github.com/SumoLogic/fluentd-output-sumologic/pull/56)
+- Add option for specifing custom dimensions for metrics: [#57](https://github.com/SumoLogic/fluentd-output-sumologic/pull/57)
+- Add support for compression: [#58](https://github.com/SumoLogic/fluentd-output-sumologic/pull/58)
+
 <a name="1.5.0"></a>
 # [1.5.0] (2019-06-26)
 - Add support for new log format fields: [#49](https://github.com/SumoLogic/fluentd-output-sumologic/pull/49)
