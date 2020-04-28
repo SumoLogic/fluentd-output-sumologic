@@ -186,13 +186,19 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     end
 
     conf['custom_fields'] = validate_key_value_pairs(conf['custom_fields'])
+    if conf['custom_fields'].nil?
+      conf.delete 'custom_fields'
+    end
     unless conf['custom_fields']
-      @log.info "Custom fields: #{conf['custom_fields']}"
+      @log.debug "Custom fields: #{conf['custom_fields']}"
     end
 
     conf['custom_dimensions'] = validate_key_value_pairs(conf['custom_dimensions'])
+    if conf['custom_dimensions'].nil?
+      conf.delete 'custom_dimensions'
+    end
     unless conf['custom_dimensions']
-      @log.info "Custom dimensions: #{conf['custom_dimensions']}"
+      @log.debug "Custom dimensions: #{conf['custom_dimensions']}"
     end
 
     # For some reason default is set incorrectly in unit-tests
