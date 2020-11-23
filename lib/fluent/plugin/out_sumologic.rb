@@ -295,7 +295,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   # Convert log to string and strip it
   def strip_log(log)
-    if log.is_a?(Array)
+    if log.is_a?(Array) or log.is_a?(Hash)
       log = Yajl.dump(log)
     end
 
