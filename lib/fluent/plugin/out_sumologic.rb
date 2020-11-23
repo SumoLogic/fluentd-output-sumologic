@@ -293,6 +293,19 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
     time.to_s.length == 13 ? time : time * 1000
   end
 
+  # Convert log to string and strip it
+  def log_to_str(log)
+    if log.is_a?(Array) or log.is_a?(Hash)
+      log = Yajl.dump(log)
+    end
+
+    unless log.nil?
+      log.strip!
+    end
+
+    return log
+  end
+
   # This method is called every flush interval. Write the buffer chunk
   def write(chunk)
     messages_list = {}
@@ -313,10 +326,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       when 'logs'
         case log_format
         when 'text'
-          log = record[@log_key]
-          unless log.nil?
-            log.strip!
-          end
+          log = log_to_str(record[@log_key])
         when 'json_merge'
           if @add_timestamp
             record = { @timestamp_key => sumo_timestamp(time) }.merge(record)
@@ -334,10 +344,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           log = dump_log(record)
         end
       when 'metrics'
-        log = record[@log_key]
-        unless log.nil?
-          log.strip!
-        end
+        log = log_to_str(record[@log_key])
       end
 
       unless log.nil?
