@@ -671,4 +671,46 @@ class SumologicOutput < Test::Unit::TestCase
                      times:1
   end
 
+  def test_emit_text_from_array
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      text
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => ['test', 'test2']})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: '["test","test2"]',
+                     times:1
+  end
+
+  def test_emit_text_from_dict
+    config = %{
+      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
+      log_format      text
+      source_category test
+      source_host     test
+      source_name     test
+
+    }
+    driver = create_driver(config)
+    time = event_time
+    stub_request(:post, 'https://collectors.sumologic.com/v1/receivers/http/1234')
+    driver.run do
+      driver.feed("output.test", time, {'foo' => 'bar', 'message' => {'test': 'test2', 'test3': 'test4'}})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
+                     body: '{"test":"test2","test3":"test4"}',
+                     times:1
+  end
+
 end
