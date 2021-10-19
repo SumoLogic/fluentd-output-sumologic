@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.7.3"></a>
+# [1.7.3] (2021-10-19)
+- Expose httpclient send_timeout [#66](https://github.com/SumoLogic/fluentd-output-sumologic/pull/68)
+- Fix json parsing [#69](https://github.com/SumoLogic/fluentd-output-sumologic/pull/69)
+
+<a name="1.7.2"></a>
+# [1.7.2] (2020-11-23)
+- Fix configuration for older fluentd versions [#63](https://github.com/SumoLogic/fluentd-output-sumologic/pull/63)
+
 <a name="1.7.1"></a>
 # [1.7.1] (2020-04-28)
 - Fix configuration for older fluentd versions [#63](https://github.com/SumoLogic/fluentd-output-sumologic/pull/63)
