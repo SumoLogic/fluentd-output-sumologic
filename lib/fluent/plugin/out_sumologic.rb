@@ -1,5 +1,6 @@
 require 'fluent/plugin/output'
 require 'net/https'
+require 'json'
 require 'yajl'
 require 'httpclient'
 require 'zlib'
@@ -252,8 +253,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   def dump_log(log)
     log.delete('_sumo_metadata')
     begin
-      parser = Yajl::Parser.new
-      hash = parser.parse(log[@log_key])
+      hash = JSON.parse(log[@log_key])
       log[@log_key] = hash
       Yajl.dump(log)
     rescue
