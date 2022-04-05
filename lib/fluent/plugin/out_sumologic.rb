@@ -13,12 +13,13 @@ class SumologicConnection
   COMPRESS_DEFLATE = 'deflate'
   COMPRESS_GZIP = 'gzip'
 
-  def initialize(endpoint, verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies, sumo_client, compress_enabled, compress_encoding)
+  def initialize(endpoint, verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies, sumo_client, compress_enabled, compress_encoding, logger)
     @endpoint = endpoint
     @sumo_client = sumo_client
     create_http_client(verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies)
     @compress = compress_enabled
     @compress_encoding = (compress_encoding ||= COMPRESS_GZIP).downcase
+    @logger = logger
 
     unless [COMPRESS_DEFLATE, COMPRESS_GZIP].include? @compress_encoding
       raise "Invalid compression encoding #{@compress_encoding} must be gzip or deflate"
@@ -30,6 +31,29 @@ class SumologicConnection
     unless response.ok?
       raise RuntimeError, "Failed to send data to HTTP Source. #{response.code} - #{response.body}"
     end
+
+    # response is 20x, check response content
+    return if response.content.length == 0
+    
+    # if we get a non-empty response, check it 
+    begin
+      response_map = JSON.load(response.content)
+    rescue JSON::ParserError
+      @logger.warn "Error decoding receiver response: #{response.content}"
+      return
+    end
+
+    # log a warning with the present keys
+    response_keys = ["id", "code", "status", "message", "errors"]
+    log_params = []
+    response_keys.each do |key|
+      if response_map.has_key?(key) then
+        value = response_map[key]
+        log_params.append("#{key}: #{value}")
+      end
+    end
+    log_params_str = log_params.join(", ")
+    @logger.warn "There was an issue sending data: #{log_params_str}"
   end
 
   def request_headers(source_host, source_category, source_name, data_type, metric_data_format, collected_fields, dimensions)
@@ -218,7 +242,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       conf['disable_cookies'],
       conf['sumo_client'],
       conf['compress'],
-      conf['compress_encoding']
+      conf['compress_encoding'],
+      log,
       )
     super
   end

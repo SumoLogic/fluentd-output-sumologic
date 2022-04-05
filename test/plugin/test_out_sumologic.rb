@@ -795,6 +795,34 @@ class SumologicOutput < Test::Unit::TestCase
                      headers: {'X-Sumo-Category'=>'test', 'X-Sumo-Client'=>'fluentd-output', 'X-Sumo-Host'=>'test', 'X-Sumo-Name'=>'test'},
                      body: /\A{"timestamp":\d+.,"message":"\\"foo\\\\\\": \\\\\\"bar\\\\\\", \\\\\\"mess"}\z/,
                      times:1
-  end  
+  end
+
+  def test_warning_response_from_receiver
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+    config = %{
+      endpoint #{endpoint}
+    }
+    testdata = [
+      [
+        '{"id":"1TIRY-KGIVX-TPQRJ","errors":[{"code":"internal.error","message":"Internal server error."}]}', 
+        'There was an issue sending data: id: 1TIRY-KGIVX-TPQRJ, errors: [{"code"=>"internal.error", "message"=>"Internal server error."}]'
+      ],
+      [
+        '{"id":"1TIRY-KGIVX-TPQRX","code": 200, "status": "Fields dropped", "message": "Dropped fields above the 30 field limit"}', 
+        'There was an issue sending data: id: 1TIRY-KGIVX-TPQRX, code: 200, status: Fields dropped, message: Dropped fields above the 30 field limit'
+      ],
+    ]
+    time = event_time
+
+    testdata.each do |data, log|
+      driver = create_driver(config)
+      stub_request(:post, endpoint).to_return(body: data, headers: {content_type: 'application/json'})
+      driver.run do
+        driver.feed("test", time, {"message": "test"})
+      end
+      assert_equal driver.logs.length, 1
+      assert driver.logs[0].end_with?(log + "\n")
+    end
+  end
 
 end
