@@ -397,6 +397,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
         fields = [fields,@custom_fields].compact.join(",")
       end
 
+      @log.debug { "Sending #{messages.count} #{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}'." }
+
       @sumo_conn.publish(
           messages.join("\n"),
           source_host         =source_host,
