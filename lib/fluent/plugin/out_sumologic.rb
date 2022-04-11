@@ -157,6 +157,13 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :timestamp_key, :string, :default => 'timestamp'
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
+
+  config_param :retry_timeout, :time, :default => '72h'
+  config_param :retry_forever, :bool, :default => false
+  config_param :retry_max_times, :time, :default => 0
+  config_param :retry_min_interval, :time, :default => '1s'
+  config_param :retry_max_interval, :time, :default => '5m'
+
   # https://help.sumologic.com/Manage/Fields
   desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every log record.'
   config_param :custom_fields, :string, :default => nil
@@ -385,6 +392,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
     end
 
+    chunk_id = "##{chunk.dump_unique_id_hex(chunk.unique_id)}"
     # Push logs to sumo
     messages_list.each do |key, messages|
       source_name, source_category, source_host, fields = key[:source_name], key[:source_category],
@@ -397,18 +405,50 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
         fields = [fields,@custom_fields].compact.join(",")
       end
 
-      @log.debug { "Sending #{messages.count} #{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}'." }
+      retries = 0
+      start_time = Time.now
+      sleep_time = @retry_min_interval
 
-      @sumo_conn.publish(
-          messages.join("\n"),
-          source_host         =source_host,
-          source_category     =source_category,
-          source_name         =source_name,
-          data_type           =@data_type,
-          metric_data_format  =@metric_data_format,
-          collected_fields    =fields,
-          dimensions          =@custom_dimensions
-      )
+      while true
+        begin
+          @log.debug { "Sending #{messages.count} #{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk  #{chunk_id}." }
+
+          @sumo_conn.publish(
+              messages.join("\n"),
+              source_host         =source_host,
+              source_category     =source_category,
+              source_name         =source_name,
+              data_type           =@data_type,
+              metric_data_format  =@metric_data_format,
+              collected_fields    =fields,
+              dimensions          =@custom_dimensions
+          )
+          break
+        rescue => e
+          # increment retries
+          retries = retries + 1
+
+          log.warn "error while sending request to sumo for chunk #{chunk_id}: #{e}"
+          log.warn_backtrace e.backtrace
+
+          # drop data if
+          #  - we are not requested to retry forever and
+          #    - we reached out the @retry_max_times retries
+          #    - or we exceeded @retry_timeout
+          if !@retry_forever && ((retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0))
+            log.warn "dropping data for chunk #{chunk_id}"
+            break
+          end
+
+          log.info "going to retry to send chunk #{chunk_id} at #{Time.now + sleep_time}"
+          sleep sleep_time
+
+          sleep_time = sleep_time * 2
+          if sleep_time > @retry_max_times
+            sleep_time = @retry_max_times
+          end
+        end
+      end
     end
 
   end
