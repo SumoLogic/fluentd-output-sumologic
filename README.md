@@ -38,7 +38,8 @@ Configuration options for fluent.conf are:
 * `compress_encoding` - Compression encoding format, either `gzip` or `deflate` (default `gzip`)
 * `custom_fields` - Comma-separated key=value list of fields to apply to every log. [more information](https://help.sumologic.com/Manage/Fields#http-source-fields)
 * `custom_dimensions` - Comma-separated key=value list of dimensions to apply to every metric. [more information](https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Metrics-to-an-HTTP-Source#supported-http-headers)
-* `skip_retry` - Disable custom retry mechanism
+* `skip_retry` - Disable custom retry mechanism. As this is `true` by default due to backward compatibility,
+  we recommend to disable it and configure following parameters (`retry_min_interval`, `retry_max_interval`, `retry_timeout`, `retry_max_times`)
 * `retry_min_interval` - Minimum interval to wait between sending tries (default is `1s`)
 * `retry_max_interval` - Maximum interval to wait between sending tries (default is `5m`)
 * `retry_timeout` - Time after which the data is going to be dropped (default is `72h`) (`0s` means that this argument will be ignored)
@@ -146,6 +147,7 @@ Example
 
 `retry_min_interval`, `retry_max_interval`, `retry_timeout`, `retry_max_times` are not the [buffer retries parameters][buffer_retries].
 Due to technical reason, this plugin implements it's own retrying back-off exponential mechanism.
+It is disabled by default, but we recommend to enable it by setting `skip_retry` to `false`.
 
 [buffer_retries]: https://docs.fluentd.org/configuration/buffer-section#retries-parameters
 
