@@ -409,7 +409,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       start_time = Time.now
       sleep_time = @retry_min_interval
 
-      common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk  #{chunk_id}."
+      common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}"
       while true
         begin
           @log.debug { "Sending #{messages.count}; #{common_log_part}" }
