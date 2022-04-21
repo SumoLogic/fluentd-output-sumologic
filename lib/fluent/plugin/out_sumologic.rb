@@ -409,9 +409,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       start_time = Time.now
       sleep_time = @retry_min_interval
 
+      common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk  #{chunk_id}."
       while true
         begin
-          @log.debug { "Sending #{messages.count} #{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk  #{chunk_id}." }
+          @log.debug { "Sending #{messages.count}; #{common_log_part}" }
 
           @sumo_conn.publish(
               messages.join("\n"),
@@ -431,18 +432,18 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           # increment retries
           retries = retries + 1
 
-          log.warn "error while sending request to sumo for chunk #{chunk_id}: #{e}"
+          log.warn "error while sending request to sumo: #{e}; #{common_log_part}"
           log.warn_backtrace e.backtrace
 
           # drop data if
           #   - we reached out the @retry_max_times retries
           #   - or we exceeded @retry_timeout
           if (retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0)
-            log.warn "dropping data for chunk #{chunk_id}"
+            log.warn "dropping records; #{common_log_part}"
             break
           end
 
-          log.info "going to retry to send chunk #{chunk_id} at #{Time.now + sleep_time}"
+          log.info "going to retry to send data at #{Time.now + sleep_time}; #{common_log_part}"
           sleep sleep_time
 
           sleep_time = sleep_time * 2
