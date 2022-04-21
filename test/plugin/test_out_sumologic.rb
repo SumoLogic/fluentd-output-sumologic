@@ -831,6 +831,7 @@ class SumologicOutput < Test::Unit::TestCase
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 3
+      skip_retry false
     }
     time = event_time
 
@@ -853,6 +854,7 @@ class SumologicOutput < Test::Unit::TestCase
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 15
+      skip_retry false
     }
     time = event_time
 
@@ -875,6 +877,7 @@ class SumologicOutput < Test::Unit::TestCase
       retry_min_interval 0s
       retry_max_times 0
       retry_timeout 0s
+      skip_retry false
     }
     time = event_time
 
@@ -889,6 +892,24 @@ class SumologicOutput < Test::Unit::TestCase
     assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
                      body: /\A{"timestamp":\d+.,"message":"test"}\z/,
                      times:124
+  end
+
+  def test_skip_retry
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+    config = %{
+      endpoint #{endpoint}
+    }
+    time = event_time
+
+    driver = create_driver(config)
+    stub_request(:post, endpoint).to_return(status: 500, headers: {content_type: 'application/json'})
+
+    exception = assert_raise(RuntimeError) {
+      driver.run do
+        driver.feed("test", time, {"message": "test"})
+      end
+    }
+    assert_equal("Failed to send data to HTTP Source. 500 - ", exception.message)
   end
 
 end
