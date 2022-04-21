@@ -873,7 +873,8 @@ class SumologicOutput < Test::Unit::TestCase
     config = %{
       endpoint #{endpoint}
       retry_min_interval 0s
-      retry_forever true
+      retry_max_times 0
+      retry_timeout 0s
     }
     time = event_time
 

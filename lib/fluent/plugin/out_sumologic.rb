@@ -159,7 +159,6 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :disable_cookies, :bool, :default => false
 
   config_param :retry_timeout, :time, :default => 72 * 3600  # 72h
-  config_param :retry_forever, :bool, :default => false
   config_param :retry_max_times, :time, :default => 0
   config_param :retry_min_interval, :time, :default => 1  # 1s
   config_param :retry_max_interval, :time, :default => 5*60  # 5m
@@ -432,10 +431,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           log.warn_backtrace e.backtrace
 
           # drop data if
-          #  - we are not requested to retry forever and
-          #    - we reached out the @retry_max_times retries
-          #    - or we exceeded @retry_timeout
-          if !@retry_forever && ((retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0))
+          #   - we reached out the @retry_max_times retries
+          #   - or we exceeded @retry_timeout
+          if (retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0)
             log.warn "dropping data for chunk #{chunk_id}"
             break
           end
