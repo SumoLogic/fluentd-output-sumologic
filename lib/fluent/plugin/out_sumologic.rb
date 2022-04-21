@@ -158,11 +158,11 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
 
-  config_param :retry_timeout, :time, :default => '72h'
+  config_param :retry_timeout, :time, :default => 72 * 3600  # 72h
   config_param :retry_forever, :bool, :default => false
   config_param :retry_max_times, :time, :default => 0
-  config_param :retry_min_interval, :time, :default => '1s'
-  config_param :retry_max_interval, :time, :default => '5m'
+  config_param :retry_min_interval, :time, :default => 1  # 1s
+  config_param :retry_max_interval, :time, :default => 5*60  # 5m
 
   # https://help.sumologic.com/Manage/Fields
   desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every log record.'

@@ -825,4 +825,69 @@ class SumologicOutput < Test::Unit::TestCase
     end
   end
 
+  def test_resend
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+    config = %{
+      endpoint #{endpoint}
+      retry_min_interval 0s
+      retry_max_times 3
+    }
+    time = event_time
+
+    driver = create_driver(config)
+    stub_request(:post, endpoint).to_return(
+      {status: 500, headers: {content_type: 'application/json'}},
+      {status: 200, headers: {content_type: 'application/json'}}
+    )
+    driver.run do
+      driver.feed("test", time, {"message": "test"})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
+                     times:2
+  end
+
+  def test_resend_failed
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+    config = %{
+      endpoint #{endpoint}
+      retry_min_interval 0s
+      retry_max_times 15
+    }
+    time = event_time
+
+    driver = create_driver(config)
+    stub_request(:post, endpoint).to_return(
+      status: 500, headers: {content_type: 'application/json'}
+    )
+    driver.run do
+      driver.feed("test", time, {"message": "test"})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
+                     times:15
+  end
+
+  def test_resend_forever
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+    config = %{
+      endpoint #{endpoint}
+      retry_min_interval 0s
+      retry_forever true
+    }
+    time = event_time
+
+    driver = create_driver(config)
+    stub_request(:post, endpoint).to_return(
+      *[{status: 500, headers: {content_type: 'application/json'}}]*123,
+      {status: 200, headers: {content_type: 'application/json'}}
+    )
+    driver.run do
+      driver.feed("test", time, {"message": "test"})
+    end
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                     body: /\A{"timestamp":\d+.,"message":"test"}\z/,
+                     times:124
+  end
+
 end
