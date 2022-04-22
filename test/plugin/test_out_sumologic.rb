@@ -831,7 +831,7 @@ class SumologicOutput < Test::Unit::TestCase
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 3
-      skip_retry false
+      use_internal_retry true
     }
     time = event_time
 
@@ -854,7 +854,7 @@ class SumologicOutput < Test::Unit::TestCase
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 15
-      skip_retry false
+      use_internal_retry true
     }
     time = event_time
 
@@ -877,7 +877,7 @@ class SumologicOutput < Test::Unit::TestCase
       retry_min_interval 0s
       retry_max_times 0
       retry_timeout 0s
-      skip_retry false
+      use_internal_retry true
     }
     time = event_time
 

@@ -158,7 +158,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
 
-  config_param :skip_retry, :bool, :default => true
+  config_param :use_internal_retry, :bool, :default => false
   config_param :retry_timeout, :time, :default => 72 * 3600  # 72h
   config_param :retry_max_times, :integer, :default => 0
   config_param :retry_min_interval, :time, :default => 1  # 1s
@@ -426,7 +426,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           )
           break
         rescue => e
-          if @skip_retry
+          if !@use_internal_retry
             raise e
           end
           # increment retries
