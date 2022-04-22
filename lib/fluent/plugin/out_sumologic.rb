@@ -160,7 +160,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
   config_param :skip_retry, :bool, :default => true
   config_param :retry_timeout, :time, :default => 72 * 3600  # 72h
-  config_param :retry_max_times, :time, :default => 0
+  config_param :retry_max_times, :integer, :default => 0
   config_param :retry_min_interval, :time, :default => 1  # 1s
   config_param :retry_max_interval, :time, :default => 5*60  # 5m
 
@@ -409,8 +409,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       start_time = Time.now
       sleep_time = @retry_min_interval
 
-      common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}"
       while true
+        common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}"
         begin
           @log.debug { "Sending #{messages.count}; #{common_log_part}" }
 
@@ -447,8 +447,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
           sleep sleep_time
 
           sleep_time = sleep_time * 2
-          if sleep_time > @retry_max_times
-            sleep_time = @retry_max_times
+          if sleep_time > @retry_max_interval
+            sleep_time = @retry_max_interval
           end
         end
       end
