@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+<a name="1.8.0"></a>
+# [1.8.0] (2022-04-22)
+
+- feat: add exponential backoff for sending data [#76](https://github.com/SumoLogic/fluentd-output-sumologic/pull/76)
+- feat(max_request_size): add max_request_size to limit size of requests [#78](https://github.com/SumoLogic/fluentd-output-sumologic/pull/78)
+
+<a name="1.7.5"></a>
+# [1.7.5] (2022-04-11)
+
+- refactor: add a debug log on sending [#75](https://github.com/SumoLogic/fluentd-output-sumologic/pull/75)
+
+<a name="1.7.4"></a>
+# [1.7.4] (2021-04-08)
+
+- fix: handle receiver warning messages [#73](https://github.com/SumoLogic/fluentd-output-sumologic/pull/73)
+
 <a name="1.7.3"></a>
 # [1.7.3] (2021-10-19)
 - Expose httpclient send_timeout [#66](https://github.com/SumoLogic/fluentd-output-sumologic/pull/68)
