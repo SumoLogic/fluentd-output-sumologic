@@ -43,7 +43,7 @@ Configuration options for fluent.conf are:
 * `retry_min_interval` - Minimum interval to wait between sending tries (default is `1s`)
 * `retry_max_interval` - Maximum interval to wait between sending tries (default is `5m`)
 * `retry_timeout` - Time after which the data is going to be dropped (default is `72h`) (`0s` means that there is no timeout)
-* `retry_max_times` - Maximum number of retries (default is `0`) (`0` means that this argument will be ignored)
+* `retry_max_times` - Maximum number of retries (default is `0`) (`0` means that there is no max retry times, retries will happen forever)
 
 __NOTE:__ <sup>*</sup> [Placeholders](https://docs.fluentd.org/v1.0/articles/buffer-section#placeholders) are supported
 
