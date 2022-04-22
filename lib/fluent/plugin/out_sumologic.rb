@@ -157,6 +157,13 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :timestamp_key, :string, :default => 'timestamp'
   config_param :proxy_uri, :string, :default => nil
   config_param :disable_cookies, :bool, :default => false
+
+  config_param :use_internal_retry, :bool, :default => false
+  config_param :retry_timeout, :time, :default => 72 * 3600  # 72h
+  config_param :retry_max_times, :integer, :default => 0
+  config_param :retry_min_interval, :time, :default => 1  # 1s
+  config_param :retry_max_interval, :time, :default => 5*60  # 5m
+
   # https://help.sumologic.com/Manage/Fields
   desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every log record.'
   config_param :custom_fields, :string, :default => nil
@@ -385,6 +392,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
 
     end
 
+    chunk_id = "##{chunk.dump_unique_id_hex(chunk.unique_id)}"
     # Push logs to sumo
     messages_list.each do |key, messages|
       source_name, source_category, source_host, fields = key[:source_name], key[:source_category],
@@ -397,18 +405,53 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
         fields = [fields,@custom_fields].compact.join(",")
       end
 
-      @log.debug { "Sending #{messages.count} #{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}'." }
+      retries = 0
+      start_time = Time.now
+      sleep_time = @retry_min_interval
 
-      @sumo_conn.publish(
-          messages.join("\n"),
-          source_host         =source_host,
-          source_category     =source_category,
-          source_name         =source_name,
-          data_type           =@data_type,
-          metric_data_format  =@metric_data_format,
-          collected_fields    =fields,
-          dimensions          =@custom_dimensions
-      )
+      while true
+        common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}"
+        begin
+          @log.debug { "Sending #{messages.count}; #{common_log_part}" }
+
+          @sumo_conn.publish(
+              messages.join("\n"),
+              source_host         =source_host,
+              source_category     =source_category,
+              source_name         =source_name,
+              data_type           =@data_type,
+              metric_data_format  =@metric_data_format,
+              collected_fields    =fields,
+              dimensions          =@custom_dimensions
+          )
+          break
+        rescue => e
+          if !@use_internal_retry
+            raise e
+          end
+          # increment retries
+          retries = retries + 1
+
+          log.warn "error while sending request to sumo: #{e}; #{common_log_part}"
+          log.warn_backtrace e.backtrace
+
+          # drop data if
+          #   - we reached out the @retry_max_times retries
+          #   - or we exceeded @retry_timeout
+          if (retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0)
+            log.warn "dropping records; #{common_log_part}"
+            break
+          end
+
+          log.info "going to retry to send data at #{Time.now + sleep_time}; #{common_log_part}"
+          sleep sleep_time
+
+          sleep_time = sleep_time * 2
+          if sleep_time > @retry_max_interval
+            sleep_time = @retry_max_interval
+          end
+        end
+      end
     end
 
   end
