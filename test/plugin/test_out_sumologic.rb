@@ -912,4 +912,70 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal("Failed to send data to HTTP Source. 500 - ", exception.message)
   end
 
+  def test_split_negative_or_zero
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+
+    configs = [
+      %{
+        endpoint #{endpoint}
+        max_request_size -5
+      },
+      %{
+        endpoint #{endpoint}
+        max_request_size 0
+      }
+    ]
+
+    time = event_time
+
+    configs.each do |config|
+      WebMock.reset_executed_requests!
+      driver = create_driver(config)
+      stub_request(:post, endpoint).to_return(status: 200, headers: {content_type: 'application/json'})
+
+      driver.run do
+        driver.feed("test", time, {"message": "test"})
+        driver.feed("test", time, {"message": "test"})
+        driver.feed("test", time, {"message": "test"})
+      end
+
+      assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                      body: /\A{"timestamp":\d+.,"message":"test"}\n{"timestamp":\d+.,"message":"test"}\n{"timestamp":\d+.,"message":"test"}\z/,
+                      times:1
+    end
+  end
+
+  def test_split
+    endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
+
+    config = %{
+        endpoint #{endpoint}
+        max_request_size 80
+      }
+
+    time = event_time
+
+    WebMock.reset_executed_requests!
+    driver = create_driver(config)
+    stub_request(:post, endpoint).to_return(status: 200, headers: {content_type: 'application/json'})
+
+    driver.run do
+      driver.feed("test", time, {"message": "test1"})
+      driver.feed("test", time, {"message": "test2"})
+      driver.feed("test", time, {"message": "test3"})
+      driver.feed("test", time, {"message": "test4"})
+      driver.feed("test", time, {"message": "test5"})
+    end
+
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                    body: /\A{"timestamp":\d+.,"message":"test1"}\n{"timestamp":\d+.,"message":"test2"}\z/,
+                    times:1
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                    body: /\A{"timestamp":\d+.,"message":"test3"}\n{"timestamp":\d+.,"message":"test4"}\z/,
+                    times:1
+    assert_requested :post, "https://collectors.sumologic.com/v1/receivers/http/1234",
+                    body: /\A{"timestamp":\d+.,"message":"test5"}\z/,
+                    times:1
+  end
+
 end

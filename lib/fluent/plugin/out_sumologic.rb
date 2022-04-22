@@ -164,6 +164,8 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :retry_min_interval, :time, :default => 1  # 1s
   config_param :retry_max_interval, :time, :default => 5*60  # 5m
 
+  config_param :max_request_size, :size, :default => 0
+
   # https://help.sumologic.com/Manage/Fields
   desc 'Fields string (eg "cluster=payment, service=credit_card") which is going to be added to every log record.'
   config_param :custom_fields, :string, :default => nil
@@ -252,6 +254,10 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       conf['compress_encoding'],
       log,
       )
+
+    if !conf['max_request_size'].nil? && conf['max_request_size'].to_i <= 0
+      conf['max_request_size'] = '0'
+    end
     super
   end
 
@@ -405,50 +411,75 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
         fields = [fields,@custom_fields].compact.join(",")
       end
 
-      retries = 0
-      start_time = Time.now
-      sleep_time = @retry_min_interval
+      if @max_request_size <= 0
+        messages_to_send = [messages]
+      else
+        messages_to_send = []
+        current_message = []
+        current_length = 0
+        messages.each do |message|
+          current_message.push message
+          current_length += message.length
 
-      while true
-        common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}"
-        begin
-          @log.debug { "Sending #{messages.count}; #{common_log_part}" }
-
-          @sumo_conn.publish(
-              messages.join("\n"),
-              source_host         =source_host,
-              source_category     =source_category,
-              source_name         =source_name,
-              data_type           =@data_type,
-              metric_data_format  =@metric_data_format,
-              collected_fields    =fields,
-              dimensions          =@custom_dimensions
-          )
-          break
-        rescue => e
-          if !@use_internal_retry
-            raise e
+          if current_length > @max_request_size
+            messages_to_send.push(current_message)
+            current_message = []
+            current_length = 0
           end
-          # increment retries
-          retries = retries + 1
+          current_length += 1  # this is for newline
+        end
+        if current_message.length > 0
+          messages_to_send.push(current_message)
+        end
+      end
+      
+      messages_to_send.each_with_index do |message, i|
+        retries = 0
+        start_time = Time.now
+        sleep_time = @retry_min_interval
 
-          log.warn "error while sending request to sumo: #{e}; #{common_log_part}"
-          log.warn_backtrace e.backtrace
+        while true
+          common_log_part = "#{@data_type} records with source category '#{source_category}', source host '#{source_host}', source name '#{source_name}', chunk #{chunk_id}, try #{retries}, batch #{i}"
 
-          # drop data if
-          #   - we reached out the @retry_max_times retries
-          #   - or we exceeded @retry_timeout
-          if (retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0)
-            log.warn "dropping records; #{common_log_part}"
+          begin
+            @log.debug { "Sending #{message.count}; #{common_log_part}" }
+
+            @sumo_conn.publish(
+              message.join("\n"),
+                source_host         =source_host,
+                source_category     =source_category,
+                source_name         =source_name,
+                data_type           =@data_type,
+                metric_data_format  =@metric_data_format,
+                collected_fields    =fields,
+                dimensions          =@custom_dimensions
+            )
             break
-          end
+          rescue => e
+            if !@use_internal_retry
+              raise e
+            end
+            # increment retries
+            retries += 1
 
-          log.info "going to retry to send data at #{Time.now + sleep_time}; #{common_log_part}"
-          sleep sleep_time
+            log.warn "error while sending request to sumo: #{e}; #{common_log_part}"
+            log.warn_backtrace e.backtrace
 
-          sleep_time = sleep_time * 2
-          if sleep_time > @retry_max_interval
-            sleep_time = @retry_max_interval
+            # drop data if
+            #   - we reached out the @retry_max_times retries
+            #   - or we exceeded @retry_timeout
+            if (retries >= @retry_max_times && @retry_max_times > 0) || (Time.now > start_time + @retry_timeout && @retry_timeout > 0)
+              log.warn "dropping records; #{common_log_part}"
+              break
+            end
+
+            log.info "going to retry to send data at #{Time.now + sleep_time}; #{common_log_part}"
+            sleep sleep_time
+
+            sleep_time *= 2
+            if sleep_time > @retry_max_interval
+              sleep_time = @retry_max_interval
+            end
           end
         end
       end
