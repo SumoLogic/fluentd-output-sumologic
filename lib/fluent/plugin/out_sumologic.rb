@@ -367,6 +367,9 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       when 'logs'
         case log_format
         when 'text'
+          if !record.has_key?(@log_key)
+            log.warn "log key `#{@log_key}` has not been found in the log"
+          end
           log = log_to_str(record[@log_key])
         when 'json_merge'
           if @add_timestamp
