@@ -22,6 +22,5 @@ usermod -aG docker vagrant
 apt-get install -y make
 
 # install requirements for ruby
-snap install ruby --channel=2.6/stable --classic
-su vagrant -c 'gem install bundler:2.1.4'
+snap install ruby --channel=3.3/stable --classic
 apt install -y gcc g++ libsnappy-dev libicu-dev zlib1g-dev cmake pkg-config libssl-dev
