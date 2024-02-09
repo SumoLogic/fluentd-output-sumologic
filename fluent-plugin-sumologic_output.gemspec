@@ -17,12 +17,10 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.required_ruby_version = '>= 2.0.0'
-
-  gem.add_development_dependency "bundler", "~> 2"
+  gem.add_development_dependency "bundler"
   gem.add_development_dependency "rake"
-  gem.add_development_dependency 'test-unit', '~> 3.1.0'
-  gem.add_development_dependency "codecov", ">= 0.1.10"
-  gem.add_runtime_dependency "fluentd", ">= 0.14.12"
-  gem.add_runtime_dependency 'httpclient', '~> 2.8.0'
+  gem.add_development_dependency 'test-unit'
+  gem.add_development_dependency "codecov"
+  gem.add_runtime_dependency "fluentd"
+  gem.add_runtime_dependency 'httpclient'
 end
