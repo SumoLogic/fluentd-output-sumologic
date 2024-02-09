@@ -1,0 +1,15 @@
+name: PR check
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - run: bundle install
+      - run: bundle exec rake
