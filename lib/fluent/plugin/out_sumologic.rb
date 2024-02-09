@@ -172,7 +172,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   desc 'Name of sumo client which is send as X-Sumo-Client header'
   config_param :sumo_client, :string, :default => 'fluentd-output'
   desc 'Compress payload'
-  config_param :compress, :bool, :default => false
+  config_param :compress, :bool, :default => true
   desc 'Encoding method of compresssion (either gzip or deflate)'
   config_param :compress_encoding, :string, :default => SumologicConnection::COMPRESS_GZIP
   # https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Metrics-to-an-HTTP-Source#supported-http-headers

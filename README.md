@@ -34,7 +34,7 @@ Configuration options for fluent.conf are:
 * `proxy_uri` - Add the `uri` of the `proxy` environment if present.
 * `metric_data_format` - The format of metrics you will be sending, either `graphite` or `carbon2` or `prometheus` (Default is `graphite `)
 * `disable_cookies` - Option to disable cookies on the HTTP Client. (Default is `false `)
-* `compress` - Option to enable compression (default `false`)
+* `compress` - Option to enable compression (default `true`)
 * `compress_encoding` - Compression encoding format, either `gzip` or `deflate` (default `gzip`)
 * `custom_fields` - Comma-separated key=value list of fields to apply to every log. [more information](https://help.sumologic.com/Manage/Fields#http-source-fields)
 * `custom_dimensions` - Comma-separated key=value list of dimensions to apply to every metric. [more information](https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Metrics-to-an-HTTP-Source#supported-http-headers)
