@@ -196,69 +196,50 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   def configure(conf)
 
     compat_parameters_convert(conf, :buffer)
+    super
 
-    unless conf['endpoint'] =~ URI::regexp
-      raise Fluent::ConfigError, "Invalid SumoLogic endpoint url: #{conf['endpoint']}"
+    unless @endpoint =~ URI::regexp
+      raise Fluent::ConfigError, "Invalid SumoLogic endpoint url: #{@endpoint}"
     end
 
-    unless conf['data_type'].nil?
-      unless conf['data_type'] =~ /\A(?:logs|metrics)\z/
-        raise Fluent::ConfigError, "Invalid data_type #{conf['data_type']} must be logs or metrics"
+    unless @data_type =~ /\A(?:logs|metrics)\z/
+      raise Fluent::ConfigError, "Invalid data_type #{@data_type} must be logs or metrics"
+    end
+
+    if @data_type == LOGS_DATA_TYPE
+      unless @log_format =~ /\A(?:json|text|json_merge|fields)\z/
+        raise Fluent::ConfigError, "Invalid log_format #{@log_format} must be text, json, json_merge or fields"
       end
     end
 
-    if conf['data_type'].nil? || conf['data_type'] == LOGS_DATA_TYPE
-      unless conf['log_format'].nil?
-        unless conf['log_format'] =~ /\A(?:json|text|json_merge|fields)\z/
-          raise Fluent::ConfigError, "Invalid log_format #{conf['log_format']} must be text, json, json_merge or fields"
-        end
+    if @data_type == METRICS_DATA_TYPE
+      unless @metric_data_format =~ /\A(?:graphite|carbon2|prometheus)\z/
+        raise Fluent::ConfigError, "Invalid metric_data_format #{@metric_data_format} must be graphite or carbon2 or prometheus"
       end
     end
 
-    if conf['data_type'] == METRICS_DATA_TYPE && ! conf['metrics_data_type'].nil?
-      unless conf['metrics_data_type'] =~ /\A(?:graphite|carbon2|pronetheus)\z/
-        raise Fluent::ConfigError, "Invalid metrics_data_type #{conf['metrics_data_type']} must be graphite or carbon2 or prometheus"
-      end
+    @custom_fields = validate_key_value_pairs(@custom_fields)
+    if @custom_fields
+      @log.debug "Custom fields: #{@custom_fields}"
     end
 
-    conf['custom_fields'] = validate_key_value_pairs(conf['custom_fields'])
-    if conf['custom_fields'].nil?
-      conf.delete 'custom_fields'
-    end
-    unless conf['custom_fields']
-      @log.debug "Custom fields: #{conf['custom_fields']}"
-    end
-
-    conf['custom_dimensions'] = validate_key_value_pairs(conf['custom_dimensions'])
-    if conf['custom_dimensions'].nil?
-      conf.delete 'custom_dimensions'
-    end
-    unless conf['custom_dimensions']
-      @log.debug "Custom dimensions: #{conf['custom_dimensions']}"
-    end
-
-    # For some reason default is set incorrectly in unit-tests
-    if conf['sumo_client'].nil? || conf['sumo_client'].strip.length == 0
-      conf['sumo_client'] = 'fluentd-output'
+    @custom_dimensions = validate_key_value_pairs(@custom_dimensions)
+    if @custom_dimensions
+      @log.debug "Custom dimensions: #{@custom_dimensions}"
     end
 
     @sumo_conn = SumologicConnection.new(
-      conf['endpoint'],
-      conf['verify_ssl'],
-      conf['open_timeout'].to_i,
-      conf['send_timeout'].to_i,
-      conf['proxy_uri'],
-      conf['disable_cookies'],
-      conf['sumo_client'],
-      conf['compress'],
-      conf['compress_encoding'],
-      log,
+      @endpoint,
+      @verify_ssl,
+      @open_timeout,
+      @send_timeout,
+      @proxy_uri,
+      @disable_cookies,
+      @sumo_client,
+      @compress,
+      @compress_encoding,
+      @log,
       )
-
-    if !conf['max_request_size'].nil? && conf['max_request_size'].to_i <= 0
-      conf['max_request_size'] = '0'
-    end
-    super
   end
 
   # This method is called when starting.
