@@ -19,7 +19,15 @@ class SumologicOutput < Test::Unit::TestCase
   def test_no_endpoint_configure
     config = %{}
     exception = assert_raise(Fluent::ConfigError) {create_driver(config)}
-    assert_equal("Invalid SumoLogic endpoint url: ", exception.message)
+    assert_equal("'endpoint' parameter is required", exception.message)
+  end
+
+  def test_invalid_endpoint
+    config = %{
+      endpoint Not-a-URL
+    }
+    exception = assert_raise(Fluent::ConfigError) {create_driver(config)}
+    assert_equal("Invalid SumoLogic endpoint url: Not-a-URL", exception.message)
   end
 
   def test_invalid_data_type_configure
@@ -40,14 +48,14 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal("Invalid log_format foo must be text, json, json_merge or fields", exception.message)
   end
 
-  def test_invalid_metrics_data_type
+  def test_invalid_metric_data_format
     config = %{
       endpoint            https://SUMOLOGIC_URL
       data_type           metrics
-      metrics_data_type   foo
+      metric_data_format  foo
     }
     exception = assert_raise(Fluent::ConfigError) {create_driver(config)}
-    assert_equal("Invalid metrics_data_type foo must be graphite or carbon2 or prometheus", exception.message)
+    assert_equal("Invalid metric_data_format foo must be graphite or carbon2 or prometheus", exception.message)
   end
 
   def test_default_configure
@@ -73,11 +81,13 @@ class SumologicOutput < Test::Unit::TestCase
     assert_equal instance.proxy_uri, nil
     assert_equal instance.disable_cookies, false
     assert_equal instance.sumo_client, 'fluentd-output'
+    assert_equal instance.compress, true
     assert_equal instance.compress_encoding, 'gzip'
   end
 
   def test_emit_text
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      text
       source_category test
@@ -99,6 +109,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_text_custom_sumo_client
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      text
       source_category test
@@ -121,6 +132,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
       source_category test
@@ -142,6 +154,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_empty_fields
     config = %{
+        compress        false
 	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
 	      log_format      fields
 	      source_category test
@@ -163,6 +176,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json_double_encoded
     config = %{
+      compress        false
       endpoint        https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234
       log_format      json
       source_category test
@@ -184,6 +198,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_text_format_as_json
     config = %{
+      compress        false
       endpoint        https://endpoint3.collection.us2.sumologic.com/receiver/v1/http/1234
       log_format      json
       source_category test
@@ -205,6 +220,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json_merge
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json_merge
       source_category test
@@ -226,6 +242,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json_merge_timestamp
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json_merge
       source_category test
@@ -247,6 +264,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata_with_fields_json_format
     config = %{
+      compress        false
 	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
 	      log_format      json
 	    }
@@ -270,6 +288,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata_with_fields_fields_format
     config = %{
+        compress        false
 	      endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
 	      log_format      fields
 	    }
@@ -293,6 +312,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata_with_fields_and_custom_fields_fields_format
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       custom_fields   "lorem=ipsum,dolor=amet"
@@ -317,6 +337,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata_with_fields_and_empty_custom_fields_fields_format
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       custom_fields   ""
@@ -341,6 +362,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata_with_empty_fields_and_custom_fields_fields_format
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       custom_fields   "lorem=ipsum,invalid"
@@ -365,6 +387,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_with_sumo_metadata
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
     }
@@ -387,6 +410,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json_no_timestamp
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
       source_category test
@@ -408,6 +432,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_json_timestamp_key
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
       source_category test
@@ -429,6 +454,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_graphite
     config = %{
+      compress            false
       endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
       data_type           metrics
       metric_data_format  graphite
@@ -450,6 +476,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_carbon
     config = %{
+      compress            false
       endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
       data_type           metrics
       metric_data_format  carbon2
@@ -471,6 +498,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_prometheus
     config = %{
+      compress            false
       endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
       data_type           metrics
       metric_data_format  prometheus
@@ -492,6 +520,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_prometheus_with_custom_dimensions
     config = %{
+      compress            false
       endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
       data_type           metrics
       metric_data_format  prometheus
@@ -520,6 +549,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_prometheus_with_empty_custom_metadata
     config = %{
+      compress            false
       endpoint            https://collectors.sumologic.com/v1/receivers/http/1234
       data_type           metrics
       metric_data_format  prometheus
@@ -547,6 +577,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_batching_same_headers
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
       source_category test
@@ -568,6 +599,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_batching_different_headers
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      json
       source_category test
@@ -593,6 +625,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_batching_different_fields
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       source_category test
@@ -635,7 +668,6 @@ class SumologicOutput < Test::Unit::TestCase
       source_name       test
       compress          true
       compress_encoding deflate
-
     }
     driver = create_driver(config)
     time = event_time
@@ -657,7 +689,6 @@ class SumologicOutput < Test::Unit::TestCase
       source_host       test
       source_name       test
       compress          true
-
     }
     driver = create_driver(config)
     time = event_time
@@ -673,6 +704,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_text_from_array
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      text
       source_category test
@@ -694,6 +726,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_text_from_dict
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      text
       source_category test
@@ -715,6 +748,7 @@ class SumologicOutput < Test::Unit::TestCase
 
   def test_emit_fields_string_based
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       source_category test
@@ -736,6 +770,7 @@ class SumologicOutput < Test::Unit::TestCase
   
   def test_emit_fields_invalid_json_string_based_1
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       source_category test
@@ -757,6 +792,7 @@ class SumologicOutput < Test::Unit::TestCase
   
   def test_emit_fields_invalid_json_string_based_2
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       source_category test
@@ -778,6 +814,7 @@ class SumologicOutput < Test::Unit::TestCase
   
   def test_emit_fields_invalid_json_string_based_3
     config = %{
+      compress        false
       endpoint        https://collectors.sumologic.com/v1/receivers/http/1234
       log_format      fields
       source_category test
@@ -800,6 +837,7 @@ class SumologicOutput < Test::Unit::TestCase
   def test_warning_response_from_receiver
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
     config = %{
+      compress false
       endpoint #{endpoint}
     }
     testdata = [
@@ -828,6 +866,7 @@ class SumologicOutput < Test::Unit::TestCase
   def test_resend
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
     config = %{
+      compress false
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 3
@@ -851,6 +890,7 @@ class SumologicOutput < Test::Unit::TestCase
   def test_resend_failed
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
     config = %{
+      compress false
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 15
@@ -873,6 +913,7 @@ class SumologicOutput < Test::Unit::TestCase
   def test_resend_forever
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
     config = %{
+      compress false
       endpoint #{endpoint}
       retry_min_interval 0s
       retry_max_times 0
@@ -897,6 +938,7 @@ class SumologicOutput < Test::Unit::TestCase
   def test_skip_retry
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
     config = %{
+      compress false
       endpoint #{endpoint}
     }
     time = event_time
@@ -917,10 +959,12 @@ class SumologicOutput < Test::Unit::TestCase
 
     configs = [
       %{
+        compress false
         endpoint #{endpoint}
         max_request_size -5
       },
       %{
+        compress false
         endpoint #{endpoint}
         max_request_size 0
       }
@@ -949,6 +993,7 @@ class SumologicOutput < Test::Unit::TestCase
     endpoint = "https://collectors.sumologic.com/v1/receivers/http/1234"
 
     config = %{
+        compress false
         endpoint #{endpoint}
         max_request_size 80
       }
