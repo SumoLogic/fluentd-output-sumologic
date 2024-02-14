@@ -1,0 +1,23 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: gem build fluent-plugin-sumologic_output.gemspec
+      - name: Publish
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUGYGEMS_APIKEY }}
+        run: gem push fluent-plugin-sumologic_output-*.gem
