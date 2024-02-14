@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. Tracking did not begin until version 1.10.
 
+## [1.9.0]
+
+Released 2024-02-14
+
+- feat: enable compression by default [#87](https://github.com/SumoLogic/fluentd-output-sumologic/pull/87)
+- feat: log warning if `log_key` does not exist in log [#86](https://github.com/SumoLogic/fluentd-output-sumologic/pull/86)
+- fix: fix how `compress` configuration flag works [#90](https://github.com/SumoLogic/fluentd-output-sumologic/pull/90)
+
+  In `v1.8.0`, setting `compress` flag to either `true` or `false` caused compression to be enabled.
+  This is now fixed.
+
+[1.9.0]: https://github.com/SumoLogic/fluentd-output-sumologic/releases/1.9.0
+
 <a name="1.8.0"></a>
 # [1.8.0] (2022-04-22)
 
