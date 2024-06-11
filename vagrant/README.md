@@ -5,16 +5,28 @@
 Please install the following:
 
 - [VirtualBox](https://www.virtualbox.org/)
-- [Vagrant](https://www.vagrantup.com/)
-- [vagrant-disksize](https://github.com/sprotheroe/vagrant-disksize) plugin
+- [Vagrant](https://developer.hashicorp.com/vagrant/downloads)
+
+### General
+
+1. Install `vagrant` as per <https://developer.hashicorp.com/vagrant/downloads>
+2. Configure a provider
+3. Run `vagrant up` and then `vagrant ssh`
 
 ### MacOS
 
 ```bash
 brew cask install virtualbox
 brew cask install vagrant
-vagrant plugin install vagrant-disksize
 ```
+
+### ARM hosts (Apple M1, and so on)
+
+You'll need to use QEMU instead of VirtualBox to use Vagrant on ARM. The following instructions will assume an M1 Mac as the host:
+
+1. Install QEMU: `brew install qemu`
+2. Install the QEMU vagrant provider: `vagrant plugin install vagrant-qemu`
+3. Provision the VM with the provider: `vagrant up --provider=qemu`
 
 ## Setting up
 
