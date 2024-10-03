@@ -13,10 +13,10 @@ class SumologicConnection
   COMPRESS_DEFLATE = 'deflate'
   COMPRESS_GZIP = 'gzip'
 
-  def initialize(endpoint, verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies, sumo_client, compress_enabled, compress_encoding, logger)
+  def initialize(endpoint, verify_ssl, connect_timeout, receive_timeout, send_timeout, proxy_uri, disable_cookies, sumo_client, compress_enabled, compress_encoding, logger)
     @endpoint = endpoint
     @sumo_client = sumo_client
-    create_http_client(verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies)
+    create_http_client(verify_ssl, connect_timeout, receive_timeout, send_timeout, proxy_uri, disable_cookies)
     @compress = compress_enabled
     @compress_encoding = (compress_encoding ||= COMPRESS_GZIP).downcase
     @logger = logger
@@ -94,10 +94,11 @@ class SumologicConnection
     verify_ssl==true ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
   end
 
-  def create_http_client(verify_ssl, connect_timeout, send_timeout, proxy_uri, disable_cookies)
+  def create_http_client(verify_ssl, connect_timeout, receive_timeout, send_timeout, proxy_uri, disable_cookies)
     @http                        = HTTPClient.new(proxy_uri)
     @http.ssl_config.verify_mode = ssl_options(verify_ssl)
     @http.connect_timeout        = connect_timeout
+    @http.receive_timeout        = receive_timeout
     @http.send_timeout           = send_timeout
     if disable_cookies
       @http.cookie_manager       = nil
@@ -152,6 +153,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
   config_param :verify_ssl, :bool, :default => true
   config_param :delimiter, :string, :default => "."
   config_param :open_timeout, :integer, :default => 60
+  config_param :receive_timeout, :integer, :default => 60
   config_param :send_timeout, :integer, :default => 120
   config_param :add_timestamp, :bool, :default => true
   config_param :timestamp_key, :string, :default => 'timestamp'
@@ -232,6 +234,7 @@ class Fluent::Plugin::Sumologic < Fluent::Plugin::Output
       @endpoint,
       @verify_ssl,
       @open_timeout,
+      @receive_timeout,
       @send_timeout,
       @proxy_uri,
       @disable_cookies,
