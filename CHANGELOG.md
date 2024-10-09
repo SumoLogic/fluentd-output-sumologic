@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0]
+
+Released 2024-10-08
+
+- feat: make receive_timeout configurable [#96](https://github.com/SumoLogic/fluentd-output-sumologic/pull/96)
+- chore: add arm support to vagrant [#95](https://github.com/SumoLogic/fluentd-output-sumologic/pull/95)
+
+[1.10.0]: https://github.com/SumoLogic/fluentd-output-sumologic/releases/1.10.0
+
 ## [1.9.0]
 
 Released 2024-02-14
